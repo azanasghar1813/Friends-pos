@@ -136,7 +136,7 @@ function money(value) {
   return Number(Number(value).toFixed(2));
 }
 
-test('service charge: takeaway 0, dine-in 7% rounded to rupees', () => {
+test('service charge: takeaway 0, dine-in 5% rounded to rupees', () => {
   assert.equal(orderTotalsService.computeServiceCharge(100, 'TAKEAWAY'), 0);
   assert.equal(orderTotalsService.computeServiceCharge(100, 'DELIVERY'), 0);
   assert.equal(orderTotalsService.computeServiceCharge(100, 'DINE_IN'), 7);
@@ -182,7 +182,7 @@ test('delivery 100 + 40 fee → grand 140, no service', async () => {
   assert.equal(money(order.grand_total), 140);
 });
 
-test('payment discount on dine-in recomputes 7% service', async () => {
+test('payment discount on dine-in recomputes 5% service', async () => {
   const order = await checkoutPriced({ price: 100, orderType: 'DINE_IN' });
   assert.equal(money(order.grand_total), 107);
 

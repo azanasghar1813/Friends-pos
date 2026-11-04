@@ -113,7 +113,7 @@ class ReceiptGeneratorService {
       business: {
         name: businessProfile.business_name || "Friends Restaurant",
         branch: businessProfile.branch_name || '',
-        address: businessProfile.address || 'Opposite Akbar Plaza Near Waqas Nazir Printers Layyah Road,\nChowk Azam (Layyah)',
+        address: businessProfile.address || 'Main Bypass Layyah Road,\nChowk Azam (Layyah)',
         phone: businessProfile.phone || '0306-8977870, 0305-6135342',
         email: businessProfile.email || '',
         tax_id: businessProfile.tax_id || '',

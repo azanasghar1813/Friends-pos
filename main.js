@@ -69,6 +69,15 @@ if (app.isPackaged) {
   } catch (e) {
     console.error('Product image copy failed:', e.message);
   }
+  try {
+    const packedCerts = path.join(defaultStorageRoot, 'certs');
+    const liveCerts = path.join(prodStorageRoot, 'certs');
+    if (fs.existsSync(packedCerts)) {
+      copyDirContents(packedCerts, liveCerts);
+    }
+  } catch (e) {
+    console.error('Certs copy failed:', e.message);
+  }
 }
 
 const isProdMode = app.isPackaged || process.env.TEST_BUILD === 'true';

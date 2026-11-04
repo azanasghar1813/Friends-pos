@@ -5,7 +5,7 @@ export default {
   name: 'repair_order_sale_totals',
   up: () => {
     const result = orderTotalsService.repairAllOrders();
-    console.log(`[Migration 041] Recalculated ${result.repaired}/${result.total} orders (item subtotals, 7% dine-in service, grand total).`);
+    console.log(`[Migration 041] Recalculated ${result.repaired}/${result.total} orders (item subtotals, 5% dine-in service, grand total).`);
   },
   down: () => {}
 };

@@ -9,6 +9,15 @@ class SocketService {
   }
 
   attach(server) {
+    if (this.io) {
+      try {
+        this.io.attach(server);
+      } catch (err) {
+        console.warn('[SocketService] Secondary server attach warning:', err.message);
+      }
+      return;
+    }
+
     this.io = new Server(server, {
       cors: {
         origin: '*',

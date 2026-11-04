@@ -31,7 +31,7 @@ export default function ReceiptPreview({ order, autoPrint, onClose }: ReceiptPre
     (order as any)?.metadata?.is_vip === 'true' ||
     String((order as any)?.metadata?.is_vip || '') === '1'
   )
-  const receiptAddress = (settings.address || 'Opposite Akbar Plaza Near Waqas Nazir Printers Layyah Road,\nChowk Azam (Layyah)').replace(/\n/g, '<br>')
+  const receiptAddress = (settings.address || 'Main Bypass Layyah Road,\nChowk Azam (Layyah)').replace(/\n/g, '<br>')
   const receiptPhone = settings.phoneNumber || '0306-8977870, 0305-6135342'
   const notes = order?.notes ?? null
   const paymentStatus = order?.paymentStatus ?? "Unpaid"
@@ -139,7 +139,7 @@ export default function ReceiptPreview({ order, autoPrint, onClose }: ReceiptPre
   <div class="receipt">
     <!-- Header --> 
     <div style="display:flex;justify-content:center;margin-bottom:6px"> 
-      ${settings.logoBase64 
+      ${settings.logoBase64
         ? `<img src="${settings.logoBase64}" style="width:140px;object-fit:contain;" onerror="this.style.display='none'" />`
         : `<img src="${window.location.origin}/receipt_logo.png" style="width:140px;object-fit:contain;" onerror="this.style.display='none'" />`
       }
@@ -185,13 +185,13 @@ export default function ReceiptPreview({ order, autoPrint, onClose }: ReceiptPre
   </div>
   ${autoPrintScript}
 </body> 
-</html>` 
- 
-    if (isElectron) { 
+</html>`
+
+    if (isElectron) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment 
       // @ts-ignore 
-      window.electronAPI.printHtml(html).then(() => { 
-        if (onClose) onClose() 
+      window.electronAPI.printHtml(html).then(() => {
+        if (onClose) onClose()
       })
     } else {
       const popupWidth = 420;
@@ -202,7 +202,7 @@ export default function ReceiptPreview({ order, autoPrint, onClose }: ReceiptPre
       if (!pw) { alert('Please allow popups to print receipts.'); return }
       pw.document.write(html)
       pw.document.close()
-      
+
       if (onClose) {
         // Monitor window close to trigger onClose if the popup is closed by the user or script
         const timer = setInterval(() => {
@@ -236,7 +236,7 @@ export default function ReceiptPreview({ order, autoPrint, onClose }: ReceiptPre
           <img src="/receipt_logo.png" className="w-[140px] object-contain mb-2" onError={(e: any) => e.target.style.display = 'none'} />
         )}
         <div className="text-[9.5px] text-center mt-1 font-semibold leading-[1.35] w-full whitespace-pre-line">
-          {settings.address || 'Opposite Akbar Plaza Near Waqas Nazir Printers Layyah Road,\nChowk Azam (Layyah)'}
+          {settings.address || 'Main Bypass Layyah Road,\nChowk Azam (Layyah)'}
           {'\n'}Contact: <span className="font-black">{settings.phoneNumber || '0306-8977870, 0305-6135342'}</span>
         </div>
       </div>
@@ -286,31 +286,31 @@ export default function ReceiptPreview({ order, autoPrint, onClose }: ReceiptPre
             const rawVariant = item.variant?.variant_name_snapshot || item.variant?.name || item.variant_name || item.variant_snapshot || '';
             const cleanVar = rawVariant ? ` - ${rawVariant.replace(/[()ہاففل]/g, '').trim()}` : '';
             return (
-                  <tr key={idx} className="border-b border-black last:border-b-0">
-                    <td className="text-left py-1.5 px-2 border-r border-black">
-                      <div className={`text-xs uppercase leading-tight ${isDeal ? 'font-black' : 'font-bold'}`}>
-                        {bi.english || bi.primary}{cleanVar}
-                      </div>
-                      {bi.urdu && (
-                        <div dir="rtl" className="text-[11px] font-semibold text-neutral-800 leading-snug mt-0.5 text-right font-sans">
-                          ({bi.urdu})
-                        </div>
-                      )}
-                      {item.selectedModifiers?.map((m: any) => (
-                        <div key={m.name} className="text-[10px] font-normal text-neutral-600">+ {m.name || m.modifier_name_snapshot}</div>
-                      ))}
-                      {(item as any).combo_components?.map((c: any, cidx: number) => (
-                        <div key={cidx} className="text-[10px] font-normal text-neutral-600">- {c.quantity > 1 ? `${c.quantity}x ` : ''}{c.product_name_snapshot} {c.variant_snapshot && `(${c.variant_snapshot})`}</div>
-                      ))}
-                      {item.notes && (
-                        <div className="text-[10px] font-bold text-neutral-700">Note: {item.notes}</div>
-                      )}
-                    </td>
-                    <td className="text-center py-1 px-1 border-r border-black font-semibold text-xs align-middle">{item.quantity}</td>
-                    <td className="text-right py-1 px-2 font-semibold whitespace-nowrap align-middle text-xs">
-                      Rs {itemTotal.toFixed(0)}
-                    </td>
-                  </tr>
+              <tr key={idx} className="border-b border-black last:border-b-0">
+                <td className="text-left py-1.5 px-2 border-r border-black">
+                  <div className={`text-xs uppercase leading-tight ${isDeal ? 'font-black' : 'font-bold'}`}>
+                    {bi.english || bi.primary}{cleanVar}
+                  </div>
+                  {bi.urdu && (
+                    <div dir="rtl" className="text-[11px] font-semibold text-neutral-800 leading-snug mt-0.5 text-right font-sans">
+                      ({bi.urdu})
+                    </div>
+                  )}
+                  {item.selectedModifiers?.map((m: any) => (
+                    <div key={m.name} className="text-[10px] font-normal text-neutral-600">+ {m.name || m.modifier_name_snapshot}</div>
+                  ))}
+                  {(item as any).combo_components?.map((c: any, cidx: number) => (
+                    <div key={cidx} className="text-[10px] font-normal text-neutral-600">- {c.quantity > 1 ? `${c.quantity}x ` : ''}{c.product_name_snapshot} {c.variant_snapshot && `(${c.variant_snapshot})`}</div>
+                  ))}
+                  {item.notes && (
+                    <div className="text-[10px] font-bold text-neutral-700">Note: {item.notes}</div>
+                  )}
+                </td>
+                <td className="text-center py-1 px-1 border-r border-black font-semibold text-xs align-middle">{item.quantity}</td>
+                <td className="text-right py-1 px-2 font-semibold whitespace-nowrap align-middle text-xs">
+                  Rs {itemTotal.toFixed(0)}
+                </td>
+              </tr>
             )
           })}
         </tbody>

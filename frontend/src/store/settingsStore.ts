@@ -6,14 +6,14 @@ interface SettingsState {
   phoneNumber: string
   address: string
   trn: string
-  
+
   taxRate: number
   serviceChargeRate: number
   deliveryChargeRate: number
   currencySymbol: string
   receiptFooter: string
   logoBase64: string | null
-  
+
   updateSettings: (settings: Partial<SettingsState>) => void
   fetchLogoBase64: () => Promise<void>
 }
@@ -23,16 +23,16 @@ export const useSettingsStore = create<SettingsState>()(
     (set) => ({
       restaurantName: "Friends Restaurant",
       phoneNumber: "0306-8977870, 0305-6135342",
-      address: "Opposite Akbar Plaza Near Waqas Nazir Printers Layyah Road,\nChowk Azam (Layyah)",
+      address: "Main Bypass Layyah Road,\nChowk Azam (Layyah)",
       trn: "100234567890",
-      
+
       taxRate: 0,
       serviceChargeRate: 5,
       deliveryChargeRate: 50,
       currencySymbol: "Rs",
       receiptFooter: "Thank you for dining with us! Please come again.",
       logoBase64: null,
-      
+
       updateSettings: (settings) => set((state) => ({ ...state, ...settings })),
       fetchLogoBase64: async () => {
         const state = set;

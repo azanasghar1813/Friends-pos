@@ -96,7 +96,7 @@ class PaymentService {
       if (live) {
         const discount = Math.max(0, Number(input.discount_total) || 0);
         orderRepository.update(orderId, { discount_total: discount });
-        // Recompute 7% dine-in service on food-after-discount, then grand/due.
+        // Recompute 5% dine-in service on food-after-discount, then grand/due.
         orderTotalsService.recalculate(orderId);
         try {
           orderMetadataRepository.setMeta(orderId, 'receipt_paid_stamp', input.print_paid ? 'true' : 'false');

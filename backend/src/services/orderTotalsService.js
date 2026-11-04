@@ -3,7 +3,7 @@ import { configService } from './configService.js';
 
 /**
  * Single writer for order money fields.
- * Food subtotal comes from line items. Service is 7% of dine-in food after discount.
+ * Food subtotal comes from line items. Service is 5% of dine-in food after discount.
  * Delivery is kept only on DELIVERY orders. Tax is not charged (rate stored, amount 0).
  */
 class OrderTotalsService {

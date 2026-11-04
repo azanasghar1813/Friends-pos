@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download, X, Smartphone, Share } from 'lucide-react';
+import { Download, X, Share, MoreVertical, Smartphone } from 'lucide-react';
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -36,16 +36,23 @@ export const PWAInstallBanner: React.FC = () => {
       return;
     }
 
-    // 4. Check iOS Safari
     const ua = window.navigator.userAgent;
     const isAppleMobile = /iPhone|iPad|iPod/.test(ua) && !(window as unknown as { MSStream?: unknown }).MSStream;
+    const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua) ||
+      (window.innerWidth <= 1024 && ('ontouchstart' in window || navigator.maxTouchPoints > 0));
+
     if (isAppleMobile) {
       setIsIOS(true);
       setIsVisible(true);
       return;
     }
 
-    // 5. Android / Chrome beforeinstallprompt event
+    // 4. If mobile device, make visible immediately so user sees install instructions
+    if (isMobileDevice) {
+      setIsVisible(true);
+    }
+
+    // 5. Android / Chrome beforeinstallprompt event for 1-click install
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setInstallPrompt(e as BeforeInstallPromptEvent);
@@ -60,15 +67,19 @@ export const PWAInstallBanner: React.FC = () => {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!installPrompt) return;
-    try {
-      await installPrompt.prompt();
-      const choice = await installPrompt.userChoice;
-      if (choice.outcome === 'accepted') {
-        setIsVisible(false);
+    if (installPrompt) {
+      try {
+        await installPrompt.prompt();
+        const choice = await installPrompt.userChoice;
+        if (choice.outcome === 'accepted') {
+          setIsVisible(false);
+        }
+      } catch (err) {
+        console.warn('[PWA] Prompt error:', err);
       }
-    } catch (err) {
-      console.warn('[PWA] Prompt error:', err);
+    } else {
+      // If prompt not available yet, guide the user
+      alert("To install Friend's POS:\n1. Tap the 3 dots menu (⋮) in Chrome top right.\n2. Tap 'Add to Home screen' or 'Install App'.");
     }
   };
 
@@ -95,7 +106,7 @@ export const PWAInstallBanner: React.FC = () => {
                 <span className="text-[10px] bg-emerald-500 text-slate-950 font-extrabold px-1.5 py-0.5 rounded-full uppercase">PWA</span>
               </h4>
               <p className="text-xs text-slate-300 mt-0.5">
-                Install as app for faster access, full screen & tablet mode.
+                Install as mobile app for full-screen & fast order entry.
               </p>
             </div>
           </div>
@@ -112,10 +123,10 @@ export const PWAInstallBanner: React.FC = () => {
           <div className="bg-slate-800/80 rounded-xl p-2.5 text-xs text-slate-300 flex items-center gap-2 border border-slate-700/60">
             <Share className="h-4 w-4 text-emerald-400 shrink-0" />
             <span>
-              Tap <strong className="text-white">Share</strong> button in Safari, then tap <strong className="text-white">Add to Home Screen</strong>.
+              Tap <strong className="text-white">Share</strong> (⎋) in Safari, then tap <strong className="text-white">Add to Home Screen</strong>.
             </span>
           </div>
-        ) : (
+        ) : installPrompt ? (
           <div className="flex items-center gap-2 pt-1">
             <button
               onClick={handleInstallClick}
@@ -129,6 +140,21 @@ export const PWAInstallBanner: React.FC = () => {
               className="px-3 py-2.5 text-xs text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition font-medium"
             >
               Later
+            </button>
+          </div>
+        ) : (
+          <div className="bg-slate-800/80 rounded-xl p-2.5 text-xs text-slate-300 flex items-center justify-between gap-2 border border-slate-700/60">
+            <div className="flex items-center gap-2">
+              <MoreVertical className="h-4 w-4 text-emerald-400 shrink-0" />
+              <span>
+                Tap <strong>Chrome Menu (⋮)</strong> &rarr; <strong>Add to Home screen</strong>
+              </span>
+            </div>
+            <button
+              onClick={handleInstallClick}
+              className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-[11px] px-2.5 py-1.5 rounded-lg shrink-0 cursor-pointer"
+            >
+              How-To
             </button>
           </div>
         )}

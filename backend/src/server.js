@@ -1,4 +1,5 @@
 import app from './app.js';
+import https from 'https';
 import config from './config/index.js';
 import { storageManager } from './utils/storageManager.js';
 import { initDatabase } from './database/initDatabase.js';
@@ -8,6 +9,7 @@ import { menuCacheService } from './services/menuCacheService.js';
 import { printEngineService } from './services/printEngineService.js';
 import { printerDriverService } from './services/printerDriverService.js';
 import { socketService } from './services/socketService.js';
+import { getOrCreateSSLCredentials, getLocalIPs } from './utils/sslManager.js';
 process.on('uncaughtException', (err) => {
   console.error('[UNCAUGHT EXCEPTION]', err.name, err.message);
   if (err.stack) console.error(err.stack);
@@ -26,8 +28,12 @@ const printStartupSummary = (storageResults, dbInfo, startupTimeMs) => {
   console.log('======================================================');
   console.log(`[Version]     : ${config.app.version}`);
   console.log(`[Environment] : ${config.app.env}`);
-  console.log(`[Port]        : ${config.server.port}`);
-  console.log(`[API URL]     : http://localhost:${config.server.port}${config.server.apiPrefix}`);
+  const lanIps = getLocalIPs().filter(ip => ip !== '127.0.0.1' && ip !== 'localhost');
+  const primaryIp = lanIps[0] || '127.0.0.1';
+  console.log(`[Port]        : ${config.server.port} (HTTP) / 5443 (HTTPS)`);
+  console.log(`[Local PC]    : http://localhost:${config.server.port}`);
+  console.log(`[Mobile PWA]  : https://${primaryIp}:5443`);
+  console.log(`[API Prefix]  : ${config.server.apiPrefix}`);
   console.log(`[Startup]     : ${startupTimeMs} ms`);
   console.log('------------------------------------------------------');
   
@@ -88,6 +94,7 @@ const printStartupSummary = (storageResults, dbInfo, startupTimeMs) => {
 const startServer = async () => {
   const startTime = Date.now();
   let server;
+  let httpsServer;
 
   try {
     const storageResults = await storageManager.initializeStorage();
@@ -122,6 +129,22 @@ const startServer = async () => {
 
     socketService.attach(server);
 
+    const httpsPort = process.env.HTTPS_PORT ? parseInt(process.env.HTTPS_PORT, 10) : 5443;
+    try {
+      const ssl = await getOrCreateSSLCredentials();
+      if (ssl?.key && ssl?.cert) {
+        httpsServer = https.createServer({ key: ssl.key, cert: ssl.cert }, app);
+        httpsServer.listen(httpsPort, config.server.host, () => {
+          const lanIps = getLocalIPs().filter(ip => ip !== '127.0.0.1' && ip !== 'localhost');
+          const primaryIp = lanIps[0] || '127.0.0.1';
+          console.log(`🔒 [HTTPS Ready] Mobile PWA URL : https://${primaryIp}:${httpsPort}`);
+        });
+        socketService.attach(httpsServer);
+      }
+    } catch (sslErr) {
+      console.warn('⚠️ [SSL] Local HTTPS listener failed (continuing on HTTP):', sslErr.message);
+    }
+
     process.on('unhandledRejection', (err) => {
       console.error('[UNHANDLED REJECTION - RECOVERED]', err?.name, err?.message);
       if (err?.stack) console.error(err.stack);
@@ -139,6 +162,9 @@ const startServer = async () => {
       printerDriverService.shutdown();
       dbEngine.close();
 
+      if (httpsServer) {
+        try { httpsServer.close(); } catch (_) {}
+      }
       server.close(() => {
         console.log('HTTP server closed.');
         if (process.versions.electron) {

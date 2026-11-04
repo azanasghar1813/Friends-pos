@@ -28,9 +28,9 @@ class ReceiptService {
 
     // ── Business Information ──────────────────────────────────────────────────
     const business = {
-      name: businessProfile.business_name || 'SH-POS',
-      address: businessProfile.address || 'Opposite Akbar Plaza Near Waqas Nazir Printers Layyah Road,\nChowk Azam (Layyah)',
-      phone: businessProfile.phone || '0308-8020784, 0345-6420784',
+      name: businessProfile.business_name || "Friend's Restaurant",
+      address: businessProfile.address || 'Layyah Road, Chowk Azam',
+      phone: businessProfile.phone || '0306-8977870, 0305-6135342',
       email: businessProfile.email || '',
       tax_id: businessProfile.tax_id || '',
       logo_url: businessProfile.logo_url || null,

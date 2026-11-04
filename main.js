@@ -8,9 +8,9 @@ import http from 'http';
 import pkg from 'electron-updater';
 const { autoUpdater, CancellationToken } = pkg;
 
-// Explicitly define independent identity for SH POS
-app.setName('SH POS');
-app.setAppUserModelId('com.shpos.app');
+// Explicitly define independent identity for Friend's POS
+app.setName("Friend's POS");
+app.setAppUserModelId('com.friendspos.app');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -139,6 +139,7 @@ const createSplashWindow = () => {
     frame: false,
     transparent: false,
     backgroundColor: '#ffffff',
+    icon: path.join(__dirname, 'build', 'icon.png'),
     resizable: false,
     alwaysOnTop: true,
     webPreferences: {
@@ -167,6 +168,7 @@ const createWindow = () => {
     show: false,
     frame: false,
     backgroundColor: '#ffffff',
+    icon: path.join(__dirname, 'build', 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,

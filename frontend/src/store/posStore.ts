@@ -65,7 +65,7 @@ export type CartItem = OrderItem & {
 
 interface POSState {
   // Global App State
-  menuContext: 'Fast Food' | 'Restaurant' | 'Deals'
+  menuContext: 'Restaurant' | 'Deals'
   gridDensity: 'small' | 'medium' | 'large'
   
   // New backend-driven state
@@ -124,7 +124,7 @@ interface POSState {
   getRoundOff: () => number
 
   // Setters
-  setMenuContext: (context: 'Fast Food' | 'Restaurant' | 'Deals') => void
+  setMenuContext: (context: 'Restaurant' | 'Deals') => void
   setGridDensity: (density: 'small' | 'medium' | 'large') => void
   setOrderType: (type: 'Dine In' | 'Takeaway' | 'Delivery' | 'Drive Through') => Promise<void>
   setCustomer: (customer: any | null) => void
@@ -143,7 +143,7 @@ interface POSState {
 export const usePosStore = create<POSState>()(
   persist(
     (set, get) => ({
-  menuContext: 'Fast Food',
+  menuContext: 'Restaurant',
   gridDensity: (localStorage.getItem('pos:gridDensity') as 'small' | 'medium' | 'large') || 'medium',
   
   activeOrder: null,
@@ -891,6 +891,11 @@ const resolveValidCustomerId = (customer?: any, fallbackId?: any): string | null
     }),
     {
       name: 'pos-storage',
+      onRehydrateStorage: () => (state) => {
+        if (state && (state.menuContext as any) === 'Fast Food') {
+          state.menuContext = 'Restaurant';
+        }
+      },
       partialize: (state) => ({
         cart: state.cart,
         menuContext: state.menuContext,

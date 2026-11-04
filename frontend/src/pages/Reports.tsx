@@ -13,16 +13,12 @@ import { motion, AnimatePresence } from "framer-motion"
 import { fetchDetailedSales, fetchReportSummary, fetchRecentItems, type DetailedSaleRow } from "../api/reportApi"
 import { apiClient } from "../api/client"
 import { DateUtils } from "../utils/dateUtils"
+import { splitBilingualName } from "../utils/bilingual"
 
 export const mapCategory = (cat: string | null | undefined) => {
   const lower = (cat || '').toLowerCase().trim()
-  if (lower === 'fast food' || lower.includes('fast food')) return "Fast Food"
-  if (lower === 'restaurant' || lower.includes('restaurant')) return "Restaurant"
   if (lower === 'deals' || lower.includes('deal') || lower.includes('combo')) return "Deals"
-  if (lower === 'soda bar' || lower.includes('soda bar') || lower === 'special drinks' || lower.includes('special drink')) return "Soda Bar"
-  if (lower === 'drinks' || lower === 'cold drinks' || lower.includes('cold drink')) return "Drinks"
-  if (lower === 'fries' || lower === 'potato chips' || lower === 'shani fries') return "Fries Corner"
-  return "Other"
+  return cat?.trim() || "Restaurant"
 }
 
 const COLORS = ['#f97316', '#3b82f6', '#10b981', '#8b5cf6', '#a855f7', '#ec4899', '#f43f5e']
@@ -302,18 +298,14 @@ export default function Reports() {
               ['Gross Sales (ticket total)', `Rs. ${formatCurrency(reportStats.grossSales)}`],
               ['Net Sales (food after discount)', `Rs. ${formatCurrency(reportStats.netSales)}`],
               ['Tax (0%)', `Rs. ${formatCurrency(0)}`],
-              ['Service Charges (dine-in 7%)', `Rs. ${formatCurrency(reportStats.totalService)}`],
+              ['Service Charges (5%)', `Rs. ${formatCurrency(reportStats.totalService)}`],
               ['Delivery Charges', `Rs. ${formatCurrency(reportStats.totalDelivery)}`],
               ['Average ticket', `Rs. ${formatCurrency(reportStats.avgBill)}`],
               ['Refunds / cancelled', `Rs. ${formatCurrency(reportStats.refundsAmount || 0)}`],
               ['Cash Sales', `Rs. ${formatCurrency(reportStats.cashSales || 0)}`],
               ['Card/Digital Sales', `Rs. ${formatCurrency(reportStats.cardSales || 0)}`],
               ['Restaurant Sales', `Rs. ${formatCurrency(reportStats.restaurantSales || 0)}`],
-              ['Fast Food Sales', `Rs. ${formatCurrency(reportStats.fastFoodSales || 0)}`],
-              ['Deals Sales', `Rs. ${formatCurrency(reportStats.dealsSales || 0)}`],
-              ['Drink Corner', `Rs. ${formatCurrency(reportStats.specialDrinksSales || 0)}`],
-              ['Drinks Sales', `Rs. ${formatCurrency(reportStats.drinksSales || 0)}`],
-              ['Fries Corner', `Rs. ${formatCurrency(reportStats.chipsSales || 0)}`]
+              ['Deals Sales', `Rs. ${formatCurrency(reportStats.dealsSales || 0)}`]
             ],
             theme: 'grid',
           })
@@ -383,16 +375,14 @@ export default function Reports() {
           <tr><td>Gross Sales (ticket total)</td><td>Rs. ${formatCurrency(reportStats.grossSales)}</td></tr>
           <tr><td>Net Sales (food after discount)</td><td>Rs. ${formatCurrency(reportStats.netSales)}</td></tr>
           <tr><td>Tax (0%)</td><td>Rs. ${formatCurrency(0)}</td></tr>
-          <tr><td>Service Charges (dine-in 7%)</td><td>Rs. ${formatCurrency(reportStats.totalService)}</td></tr>
+          <tr><td>Service Charges (5%)</td><td>Rs. ${formatCurrency(reportStats.totalService)}</td></tr>
           <tr><td>Delivery Charges</td><td>Rs. ${formatCurrency(reportStats.totalDelivery)}</td></tr>
           <tr><td>Average ticket</td><td>Rs. ${formatCurrency(reportStats.avgBill)}</td></tr>
           <tr><td>Refunds / cancelled</td><td>Rs. ${formatCurrency(reportStats.refundsAmount || 0)}</td></tr>
           <tr><td>Cash Sales</td><td>Rs. ${formatCurrency(reportStats.cashSales || 0)}</td></tr>
           <tr><td>Card/Digital Sales</td><td>Rs. ${formatCurrency(reportStats.cardSales || 0)}</td></tr>
           <tr><td>Restaurant Sales</td><td>Rs. ${formatCurrency(reportStats.restaurantSales || 0)}</td></tr>
-          <tr><td>Fast Food Sales</td><td>Rs. ${formatCurrency(reportStats.fastFoodSales || 0)}</td></tr>
-          <tr><td>Drink Corner</td><td>Rs. ${formatCurrency(reportStats.specialDrinksSales || 0)}</td></tr>
-          <tr><td>Fries Corner</td><td>Rs. ${formatCurrency(reportStats.chipsSales || 0)}</td></tr>
+          <tr><td>Deals Sales</td><td>Rs. ${formatCurrency(reportStats.dealsSales || 0)}</td></tr>
         </table>
         <h2>Order Details</h2>
         <table>
@@ -503,7 +493,7 @@ export default function Reports() {
 
     detailedSales.forEach(row => {
       const is_deal = (row.main_category || '') === 'Deals'
-      addItem(row.product_id, row.product_name, row.main_category, row.qty, row.net, !!is_deal)
+      addItem(row.product_id, row.product_name, row.sub_category || row.main_category, row.qty, row.net, !!is_deal)
     })
 
     let data = Array.from(itemMap.values())
@@ -861,8 +851,16 @@ export default function Reports() {
                               {expandedCategories[`sub_${main.name}_${sub.name}`] && sub.children.map((prod: any) => (
                                 <tr key={`${main.name}_${sub.name}_${prod.id}`} className="border-b border-border border-l-2 border-l-primary hover:bg-secondary/50 transition-colors text-xs font-semibold text-muted-foreground">
                                   <td className="py-2 px-4 pl-16 flex flex-col">
-                                    <span className="text-foreground">{prod.name}</span>
-                                    <span className="text-[10px] opacity-70">ID: {prod.id.split('-')[0]}...</span>
+                                    {(() => {
+                                      const pBi = splitBilingualName(prod.name);
+                                      return (
+                                        <>
+                                          <span className="text-foreground font-bold">{pBi.english || pBi.primary}</span>
+                                          {pBi.urdu && <span dir="rtl" className="text-[11px] text-muted-foreground font-semibold">{pBi.urdu}</span>}
+                                          <span className="text-[10px] opacity-60">ID: {prod.id.split('-')[0]}...</span>
+                                        </>
+                                      );
+                                    })()}
                                   </td>
                                   <td className="py-2 px-4 text-right">{prod.qty}</td>
                                   <td className="py-2 px-4 text-right">Rs. {formatCurrency(prod.gross)}</td>
@@ -1020,20 +1018,11 @@ export default function Reports() {
                   <div className="p-6 bg-card border border-border rounded-[2.5rem] shadow-sm flex flex-col">
                     <h3 className="text-lg font-black uppercase tracking-wider text-foreground mb-4">Sales Split</h3>
                     <div className="space-y-3 my-auto">
-                      {/* By Order Type */}
-                      <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider mb-4">By Channel</p>
-                      <div className="p-3 bg-orange-500/10 border border-orange-500/25 rounded-2xl flex justify-between items-center">
-                        <div>
-                          <span className="text-[10px] text-orange-500 font-bold uppercase">Fast Food </span>
-                          <p className="text-lg font-black text-foreground mt-0.5">Rs. {formatCurrency(reportStats.fastFoodSales || 0)}</p>
-                        </div>
-                        <span className="text-sm font-bold text-orange-500 bg-orange-500/20 px-3 py-1.5 rounded-lg">
-                          {(reportStats.totalCatSales || 0) > 0 ? Math.round(((reportStats.fastFoodSales || 0) / (reportStats.totalCatSales || 1)) * 100) : 0}%
-                        </span>
-                      </div>
+                      {/* By Section */}
+                      <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider mb-4">Sales Split</p>
                       <div className="p-3 bg-blue-500/10 border border-blue-500/25 rounded-2xl flex justify-between items-center">
                         <div>
-                          <span className="text-[10px] text-blue-500 font-bold uppercase">Restaurant</span>
+                          <span className="text-[10px] text-blue-500 font-bold uppercase">Restaurant Menu</span>
                           <p className="text-lg font-black text-foreground mt-0.5">Rs. {formatCurrency(reportStats.restaurantSales || 0)}</p>
                         </div>
                         <span className="text-sm font-bold text-blue-500 bg-blue-500/20 px-3 py-1.5 rounded-lg">
@@ -1049,42 +1038,20 @@ export default function Reports() {
                           {(reportStats.totalCatSales || 0) > 0 ? Math.round(((reportStats.dealsSales || 0) / (reportStats.totalCatSales || 1)) * 100) : 0}%
                         </span>
                       </div>
-                      <div className="p-3 bg-teal-500/10 border border-teal-500/25 rounded-2xl flex justify-between items-center">
-                        <div>
-                          <span className="text-[10px] text-teal-500 font-bold uppercase">Drinks Sale</span>
-                          <p className="text-lg font-black text-foreground mt-0.5">Rs. {formatCurrency(reportStats.drinksSales || 0)}</p>
-                        </div>
-                        <span className="text-sm font-bold text-teal-500 bg-teal-500/20 px-3 py-1.5 rounded-lg">
-                          {(reportStats.totalCatSales || 0) > 0 ? Math.round(((reportStats.drinksSales || 0) / (reportStats.totalCatSales || 1)) * 100) : 0}%
-                        </span>
-                      </div>
-                      <div className="p-3 bg-cyan-500/10 border border-cyan-500/25 rounded-2xl flex justify-between items-center">
-                        <div>
-                          <span className="text-[10px] text-cyan-500 font-bold uppercase">Soda Bar</span>
-                          <p className="text-lg font-black text-foreground mt-0.5">Rs. {formatCurrency(reportStats.specialDrinksSales || 0)}</p>
-                        </div>
-                        <span className="text-sm font-bold text-cyan-500 bg-cyan-500/20 px-3 py-1.5 rounded-lg">
-                          {(reportStats.totalCatSales || 0) > 0 ? Math.round(((reportStats.specialDrinksSales || 0) / (reportStats.totalCatSales || 1)) * 100) : 0}%
-                        </span>
-                      </div>
-                      <div className="p-3 bg-yellow-500/10 border border-yellow-500/25 rounded-2xl flex justify-between items-center">
-                        <div>
-                          <span className="text-[10px] text-yellow-500 font-bold uppercase">Shani Fries</span>
-                          <p className="text-lg font-black text-foreground mt-0.5">Rs. {formatCurrency(reportStats.chipsSales || 0)}</p>
-                        </div>
-                        <span className="text-sm font-bold text-yellow-500 bg-yellow-500/20 px-3 py-1.5 rounded-lg">
-                          {(reportStats.totalCatSales || 0) > 0 ? Math.round(((reportStats.chipsSales || 0) / (reportStats.totalCatSales || 1)) * 100) : 0}%
-                        </span>
-                      </div>
-                      {(reportStats.otherSales || 0) > 0 && (
-                        <div className="p-3 bg-zinc-500/10 border border-zinc-500/25 rounded-2xl flex justify-between items-center">
-                          <div>
-                            <span className="text-[10px] text-zinc-500 font-bold uppercase">Other</span>
-                            <p className="text-lg font-black text-foreground mt-0.5">Rs. {formatCurrency(reportStats.otherSales || 0)}</p>
-                          </div>
-                          <span className="text-sm font-bold text-zinc-500 bg-zinc-500/20 px-3 py-1.5 rounded-lg">
-                            {(reportStats.totalCatSales || 0) > 0 ? Math.round(((reportStats.otherSales || 0) / (reportStats.totalCatSales || 1)) * 100) : 0}%
-                          </span>
+
+                      {/* Top Categories Breakdown */}
+                      {categorySalesData.length > 0 && (
+                        <div className="pt-2 border-t border-border/60 space-y-2">
+                          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">Top Categories</p>
+                          {categorySalesData.slice(0, 4).map((c, cidx) => (
+                            <div key={cidx} className="p-2.5 bg-secondary/60 border border-border/80 rounded-xl flex justify-between items-center">
+                              <div>
+                                <span className="text-[11px] font-bold text-foreground truncate block max-w-[160px]">{c.cat}</span>
+                                <span className="text-[10px] text-muted-foreground">{c.sold} sold</span>
+                              </div>
+                              <span className="text-xs font-black text-primary">Rs. {formatCurrency(c.rev)}</span>
+                            </div>
+                          ))}
                         </div>
                       )}
                       <div className="p-3 bg-secondary/60 border border-border rounded-2xl text-[10px] font-bold text-muted-foreground space-y-1">
@@ -1284,7 +1251,17 @@ export default function Reports() {
                         ) : (
                           visibleProductSales.slice((productCurrentPage - 1) * itemsPerPage, productCurrentPage * itemsPerPage).map((item, idx) => (
                             <tr key={idx} className="hover:bg-secondary/20 transition-colors">
-                              <td className="p-4 text-sm font-black text-foreground">{item.name}</td>
+                              <td className="p-4">
+                                {(() => {
+                                  const pBi = splitBilingualName(item.name);
+                                  return (
+                                    <>
+                                      <div className="text-sm font-black text-foreground">{pBi.english || pBi.primary}</div>
+                                      {pBi.urdu && <div dir="rtl" className="text-xs font-semibold text-muted-foreground mt-0.5">{pBi.urdu}</div>}
+                                    </>
+                                  );
+                                })()}
+                              </td>
                               <td className="p-4 text-xs font-bold text-muted-foreground">{item.cat}</td>
                               <td className="p-4 text-sm font-black text-foreground text-right">{item.sold}</td>
                               <td className="p-4 text-sm font-black text-primary text-right">Rs. {formatCurrency(item.rev)}</td>

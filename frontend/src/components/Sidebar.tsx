@@ -67,7 +67,7 @@ export default function Sidebar() {
         <div className="h-16 flex items-center justify-between border-b border-border/50 px-4">
           {isSidebarOpen && (
             <h1 className="text-xl font-black text-primary tracking-wider truncate">
-              SH POS
+              Friend's POS
             </h1>
           )}
           <button 

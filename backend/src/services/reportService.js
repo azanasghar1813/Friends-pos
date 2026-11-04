@@ -49,12 +49,12 @@ const emptyBuckets = () => ({
 const bucketToField = (bucket) => {
   switch (bucket) {
     case 'Restaurant': return 'restaurantSales';
-    case 'Fast Food': return 'fastFoodSales';
+    case 'Fast Food': return 'restaurantSales';
     case 'Deals': return 'dealsSales';
-    case 'Drinks': return 'drinksSales';
-    case 'Fries': return 'chipsSales';
-    case 'Soda Bar': return 'specialDrinksSales';
-    default: return 'otherSales';
+    case 'Drinks': return 'restaurantSales';
+    case 'Fries': return 'restaurantSales';
+    case 'Soda Bar': return 'restaurantSales';
+    default: return 'restaurantSales';
   }
 };
 
@@ -132,6 +132,21 @@ export const reportService = {
       GROUP BY bucket
     `, ...params);
 
+    const categoryRows = dbEngine.all(`
+      SELECT
+        COALESCE(CASE WHEN d.id IS NOT NULL THEN 'Deals' END, c1.name, 'Other') as category,
+        COALESCE(SUM(oi.quantity), 0) as sold,
+        COALESCE(SUM(${ITEM_FOOD_NET_SQL}), 0) as net
+      FROM order_items oi
+      JOIN orders o ON oi.order_id = o.id
+      LEFT JOIN products p ON p.id = oi.product_id
+      LEFT JOIN deals d ON d.id = oi.product_id
+      LEFT JOIN categories c1 ON p.category_id = c1.id
+      WHERE ${where} AND ${SALE_PREDICATE}
+      GROUP BY category
+      ORDER BY net DESC
+    `, ...params);
+
     const buckets = emptyBuckets();
     for (const row of bucketRows) {
       const field = bucketToField(row.bucket);
@@ -172,6 +187,7 @@ export const reportService = {
       openBillsCount: Number(openRow?.openCount) || 0,
       openBillsTotal: Number(openRow?.openTotal) || 0,
       totalCatSales,
+      categoryBreakdown: categoryRows,
       ...buckets
     };
   },

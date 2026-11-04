@@ -13,7 +13,7 @@ if (!fs.existsSync(unpacked)) {
   process.exit(0)
 }
 
-console.log('[build] Closing SH POS if it is running from', unpacked)
+console.log('[build] Closing Friend\'s POS if it is running from', unpacked)
 
 try {
   execSync(

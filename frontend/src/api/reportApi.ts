@@ -34,6 +34,7 @@ export interface ReportSummary {
   chipsSales?: number;
   specialDrinksSales?: number;
   otherSales?: number;
+  categoryBreakdown?: { category: string; sold: number; net: number }[];
   totalCatSales?: number;
   openBillsCount?: number;
   openBillsTotal?: number;

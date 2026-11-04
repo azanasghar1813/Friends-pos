@@ -48,7 +48,7 @@ class ProductRepository {
       price: data.price,
       cost: data.cost || 0,
       barcode: data.barcode || null,
-      lifecycle_state: data.lifecycle_state || 'DRAFT',
+      lifecycle_state: data.lifecycle_state || 'ACTIVE',
       track_inventory: data.track_inventory || 0,
       kitchen_printer_id: data.kitchen_printer_id || null,
       keywords: data.keywords || null,

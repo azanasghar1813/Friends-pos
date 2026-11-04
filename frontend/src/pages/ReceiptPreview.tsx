@@ -3,6 +3,7 @@ import { Printer, X } from "lucide-react"
 import type { Order } from "../store/orderStore"
 import { useSettingsStore } from "../store/settingsStore"
 import { formatReceiptOrderNumber } from "../utils/receiptOrderNumber"
+import { splitBilingualName } from "../utils/bilingual"
 
 interface ReceiptPreviewProps {
   order?: Order
@@ -31,7 +32,7 @@ export default function ReceiptPreview({ order, autoPrint, onClose }: ReceiptPre
     String((order as any)?.metadata?.is_vip || '') === '1'
   )
   const receiptAddress = (settings.address || 'Opposite Akbar Plaza Near Waqas Nazir Printers Layyah Road,\nChowk Azam (Layyah)').replace(/\n/g, '<br>')
-  const receiptPhone = settings.phoneNumber || '0308-8020784, 0345-6420784'
+  const receiptPhone = settings.phoneNumber || '0306-8977870, 0305-6135342'
   const notes = order?.notes ?? null
   const paymentStatus = order?.paymentStatus ?? "Unpaid"
   const paymentMethod = (order as any)?.paymentMethod || (order as any)?.payments?.[0]?.method || null
@@ -69,13 +70,18 @@ export default function ReceiptPreview({ order, autoPrint, onClose }: ReceiptPre
       const itemNotes = item.notes
         ? `<div style="font-size:10px;font-weight:700;margin-top:2px">Note: ${item.notes}</div>`
         : ''
+      const bi = splitBilingualName(item.name);
+      const rawVariant = item.variant?.variant_name_snapshot || item.variant?.name || item.variant_name || item.variant_snapshot || '';
+      const cleanVar = rawVariant ? ` - ${rawVariant.replace(/[()ہاففل]/g, '').trim()}` : '';
       return `
-        <tr style="border-bottom:2px solid #000;">
-          <td style="padding:4px;border-right:2px solid #000;text-align:center;text-transform:uppercase;">
-            <div style="${itemNameClass}">${item.name}</div>${mods}${combos}${itemNotes}
+        <tr style="border-bottom:1px solid #000;">
+          <td style="padding:4px 2px;border-right:1px solid #000;text-align:left;">
+            <div style="${itemNameClass}font-size:11px;line-height:1.2;text-transform:uppercase;">${bi.english || bi.primary}${cleanVar}</div>
+            ${bi.urdu ? `<div style="font-size:10px;font-weight:600;direction:rtl;text-align:right;font-family:'Noto Nastaliq Urdu','Jameel Noori Nastaleeq',Tahoma,sans-serif;line-height:1.2;margin-top:2px;">(${bi.urdu})</div>` : ''}
+            ${mods}${combos}${itemNotes}
           </td>
-          <td style="padding:4px;border-right:2px solid #000;text-align:center;font-weight:500;font-size:13px;vertical-align:middle;">${item.quantity}</td>
-          <td style="padding:4px;text-align:center;font-weight:500;vertical-align:middle;white-space:nowrap;">Rs ${itemTotal.toFixed(2)}</td>
+          <td style="padding:4px;border-right:1px solid #000;text-align:center;font-weight:600;font-size:12px;vertical-align:middle;">${item.quantity}</td>
+          <td style="padding:4px;text-align:right;font-weight:600;vertical-align:middle;white-space:nowrap;font-size:12px;">Rs ${itemTotal.toFixed(0)}</td>
         </tr>`
     }).join('')
 
@@ -94,7 +100,7 @@ export default function ReceiptPreview({ order, autoPrint, onClose }: ReceiptPre
       </table>`
 
     const scRow = isDineIn && serviceCharge > 0
-      ? `<div style="display:flex;justify-content:flex-end;width:100%;margin-bottom:3px"><span style="font-weight:900;margin-right:16px;">Service Charges:</span><span>Rs ${serviceCharge.toFixed(2)}</span></div>` : ''
+      ? `<div style="display:flex;justify-content:flex-end;width:100%;margin-bottom:3px"><span style="font-weight:900;margin-right:16px;">Service Charges (5%):</span><span>Rs ${serviceCharge.toFixed(2)}</span></div>` : ''
     const dcRow = orderType === 'Delivery' && deliveryCharge > 0
       ? `<div style="display:flex;justify-content:flex-end;width:100%;margin-bottom:3px"><span style="font-weight:900;margin-right:16px;">Delivery:</span><span>Rs ${deliveryCharge.toFixed(2)}</span></div>` : ''
     const discRow = discount > 0
@@ -231,7 +237,7 @@ export default function ReceiptPreview({ order, autoPrint, onClose }: ReceiptPre
         )}
         <div className="text-[9.5px] text-center mt-1 font-semibold leading-[1.35] w-full whitespace-pre-line">
           {settings.address || 'Opposite Akbar Plaza Near Waqas Nazir Printers Layyah Road,\nChowk Azam (Layyah)'}
-          {'\n'}Contact: <span className="font-black">{settings.phoneNumber || '0308-8020784, 0345-6420784'}</span>
+          {'\n'}Contact: <span className="font-black">{settings.phoneNumber || '0306-8977870, 0305-6135342'}</span>
         </div>
       </div>
 
@@ -276,25 +282,35 @@ export default function ReceiptPreview({ order, autoPrint, onClose }: ReceiptPre
               itemTotal = (item.price + modTotal) * item.quantity
             }
             const isDeal = item.category?.toLowerCase().includes('deal') || (item.name || '').toLowerCase().includes('deal')
+            const bi = splitBilingualName(item.name);
+            const rawVariant = item.variant?.variant_name_snapshot || item.variant?.name || item.variant_name || item.variant_snapshot || '';
+            const cleanVar = rawVariant ? ` - ${rawVariant.replace(/[()ہاففل]/g, '').trim()}` : '';
             return (
-              <tr key={idx} className="border-b-2 border-black last:border-b-0">
-                <td className={`text-center py-1 px-1 border-r-2 border-black uppercase ${isDeal ? 'font-black' : 'font-medium'}`}>
-                  {item.name}
-                  {item.selectedModifiers?.map((m: any) => (
-                    <div key={m.name} className="text-[10px] font-normal">+ {m.name || m.modifier_name_snapshot}</div>
-                  ))}
-                  {(item as any).combo_components?.map((c: any, cidx: number) => (
-                    <div key={cidx} className="text-[10px] font-normal">- {c.quantity > 1 ? `${c.quantity}x ` : ''}{c.product_name_snapshot} {c.variant_snapshot && `(${c.variant_snapshot})`}</div>
-                  ))}
-                  {item.notes && (
-                    <div className="text-[10px] font-bold">Note: {item.notes}</div>
-                  )}
-                </td>
-                <td className="text-center py-1 px-1 border-r-2 border-black font-medium text-xs align-middle">{item.quantity}</td>
-                <td className="text-center py-1 px-1 font-medium whitespace-nowrap align-middle">
-                  Rs {itemTotal.toFixed(2)}
-                </td>
-              </tr>
+                  <tr key={idx} className="border-b border-black last:border-b-0">
+                    <td className="text-left py-1.5 px-2 border-r border-black">
+                      <div className={`text-xs uppercase leading-tight ${isDeal ? 'font-black' : 'font-bold'}`}>
+                        {bi.english || bi.primary}{cleanVar}
+                      </div>
+                      {bi.urdu && (
+                        <div dir="rtl" className="text-[11px] font-semibold text-neutral-800 leading-snug mt-0.5 text-right font-sans">
+                          ({bi.urdu})
+                        </div>
+                      )}
+                      {item.selectedModifiers?.map((m: any) => (
+                        <div key={m.name} className="text-[10px] font-normal text-neutral-600">+ {m.name || m.modifier_name_snapshot}</div>
+                      ))}
+                      {(item as any).combo_components?.map((c: any, cidx: number) => (
+                        <div key={cidx} className="text-[10px] font-normal text-neutral-600">- {c.quantity > 1 ? `${c.quantity}x ` : ''}{c.product_name_snapshot} {c.variant_snapshot && `(${c.variant_snapshot})`}</div>
+                      ))}
+                      {item.notes && (
+                        <div className="text-[10px] font-bold text-neutral-700">Note: {item.notes}</div>
+                      )}
+                    </td>
+                    <td className="text-center py-1 px-1 border-r border-black font-semibold text-xs align-middle">{item.quantity}</td>
+                    <td className="text-right py-1 px-2 font-semibold whitespace-nowrap align-middle text-xs">
+                      Rs {itemTotal.toFixed(0)}
+                    </td>
+                  </tr>
             )
           })}
         </tbody>
@@ -318,7 +334,7 @@ export default function ReceiptPreview({ order, autoPrint, onClose }: ReceiptPre
         )}
         {isDineIn && serviceCharge > 0 && (
           <div className="flex justify-end w-full">
-            <span className="font-black mr-4">Service Charges:</span>
+            <span className="font-black mr-4">Service Charges (5%):</span>
             <span>Rs {serviceCharge.toFixed(2)}</span>
           </div>
         )}

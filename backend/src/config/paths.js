@@ -38,6 +38,7 @@ export const generatePaths = (storageRoot) => {
       activity: join(absoluteStoragePath, 'logs', 'activity'),
     },
     temp: join(absoluteStoragePath, 'temp'),
+    certs: join(absoluteStoragePath, 'certs'),
     sync: join(absoluteStoragePath, 'sync'),
     updates: join(absoluteStoragePath, 'updates'),
   };

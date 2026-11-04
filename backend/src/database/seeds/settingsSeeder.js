@@ -12,18 +12,18 @@ export const runSettingsSeeder = (db) => {
   
   const defaultSettings = [
     // General
-    { key: 'business_name', val: 'SH-POS', cat: 'GENERAL', desc: 'The official name of the business' },
-    { key: 'business_address', val: 'Opposite Akbar Plaza Near Waqas Nazir Printers Layyah Road,\nChowk Azam (Layyah)', cat: 'GENERAL', desc: 'Main physical address' },
-    { key: 'phone_number', val: '0308-8020784, 0345-6420784', cat: 'GENERAL', desc: 'Main contact number' },
-    { key: 'whatsapp_number', val: '0308-8020784, 0345-6420784', cat: 'GENERAL', desc: 'WhatsApp support number' },
-    { key: 'email_address', val: 'contact@shpos.com', cat: 'GENERAL', desc: 'Support email address' },
+    { key: 'business_name', val: "Friends Restaurant", cat: 'GENERAL', desc: 'The official name of the business' },
+    { key: 'business_address', val: 'Layyah Road, Chowk Azam', cat: 'GENERAL', desc: 'Main physical address' },
+    { key: 'phone_number', val: '0306-8977870, 0305-6135342', cat: 'GENERAL', desc: 'Main contact number' },
+    { key: 'whatsapp_number', val: '0306-8977870, 0305-6135342', cat: 'GENERAL', desc: 'WhatsApp support number' },
+    { key: 'email_address', val: 'contact@friendspos.com', cat: 'GENERAL', desc: 'Support email address' },
     { key: 'timezone', val: 'Asia/Karachi', cat: 'GENERAL', desc: 'Business timezone' },
     
     // Financial
     { key: 'currency_code', val: 'PKR', cat: 'FINANCIAL', desc: 'Default currency code' },
     { key: 'currency_symbol', val: 'Rs', cat: 'FINANCIAL', desc: 'Currency symbol' },
     { key: 'tax_rate_percent', val: '0', cat: 'FINANCIAL', desc: 'Default VAT rate' },
-    { key: 'service_charge_percent', val: '7', cat: 'FINANCIAL', desc: 'Default Service Charge' },
+    { key: 'service_charge_percent', val: '5', cat: 'FINANCIAL', desc: 'Default Service Charge' },
     
     // Operations
     { key: 'business_day_start', val: '06:00', cat: 'OPERATIONS', desc: 'When the financial day resets' },
@@ -39,17 +39,19 @@ export const runSettingsSeeder = (db) => {
   }
 
   const forceSettings = [
-    ['business_name', 'SH-POS'],
-    ['restaurant_name', 'SH-POS'],
-    ['business_address', 'Opposite Akbar Plaza Near Waqas Nazir Printers Layyah Road,\nChowk Azam (Layyah)'],
-    ['address', 'Opposite Akbar Plaza Near Waqas Nazir Printers Layyah Road,\nChowk Azam (Layyah)'],
-    ['phone_number', '0308-8020784, 0345-6420784'],
-    ['phone', '0308-8020784, 0345-6420784'],
-    ['whatsapp_number', '0308-8020784, 0345-6420784'],
+    ['business_name', "Friends Restaurant"],
+    ['restaurant_name', "Friends Restaurant"],
+    ['business_address', 'Layyah Road, Chowk Azam'],
+    ['address', 'Layyah Road, Chowk Azam'],
+    ['phone_number', '0306-8977870, 0305-6135342'],
+    ['phone', '0306-8977870, 0305-6135342'],
+    ['whatsapp_number', '0306-8977870, 0305-6135342'],
     ['timezone', 'Asia/Karachi'],
     ['currency_code', 'PKR'],
     ['currency_symbol', 'Rs'],
-    ['tax_rate_percent', '0']
+    ['tax_rate_percent', '0'],
+    ['service_charge_percent', '5'],
+    ['service_charge_rate', '5']
   ];
   const forceStmt = db.prepare('UPDATE business_settings SET value = ? WHERE key = ?');
   for (const [key, val] of forceSettings) {

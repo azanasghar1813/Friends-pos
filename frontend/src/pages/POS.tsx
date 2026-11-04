@@ -23,6 +23,7 @@ import { menuService } from "../services/menuService"
 import { cartService } from "../services/posServices/cartService"
 import { authService } from "../services/authService"
 import { apiClient } from "../api/client"
+import { splitBilingualName } from "../utils/bilingual"
 import { newId } from "../utils/uuid"
 import { CustomerPanelModal } from "../components/CustomerPanelModal"
 import { TableSelectorModal } from "../components/TableSelectorModal"
@@ -615,7 +616,7 @@ export default function POS() {
 
 
         const getContext = (cat: any): string | null => {
-          if (cat.name === 'Fast Food' || cat.name === 'Restaurant' || cat.name === 'Deals') return cat.name;
+          if (cat.name === 'Deals') return 'Deals'; return 'Restaurant';
           if (cat.parent_id) {
             const parent = activeCats.find((p: any) => p.id === cat.parent_id);
             if (parent) return getContext(parent);
@@ -629,33 +630,19 @@ export default function POS() {
         })).filter((c: any) => !(c.sub_categories && c.sub_categories.length > 0));
 
         const preferredOrder = [
-          'Regular Pizza',
-          'Premium Pizza',
-          'Square Pizza',
-          'Burgers',
-          'Shawarma',
-          'Pratha Rolls',
-          'Special Rolls',
-          'Pasta',
-          'Appetizers',
-          'Sandwich',
-          'Extra Toppings',
-          'Hot & Cold Drinks',
-          'Special Drinks',
-          'Chicken',
-          'Mutton',
-          'Beef',
-          'Bar BQ',
-          'Spicy Injected Broast',
-          'Rices',
-          'Starters',
-          'Tandoor',
-          'Chinese Gravy',
-          'Noodles',
-          'Soups',
-          'Salads',
-          'Ice Cream',
-          'Bar-B-Q Platers'
+          'Beef (بیف)',
+          'Daal Sabzi (دال سبزی)',
+          'Tandoor & Drinks (تندور و بیوریجز)',
+          'Handi Boneless (ہانڈی بون لیس)',
+          'Mutton (مٹن)',
+          'BBQ (باربی کیو)',
+          'Starter (اسٹارٹر)',
+          'Soup (سوپ)',
+          'Chinese Gravy (چائنیز گریوی)',
+          'Chicken (چکن)',
+          'Rice (رائس)',
+          'Sweet (سویٹ)',
+          'Deals'
         ];
 
         const sortedCats = catsWithContext.sort((a: any, b: any) => {
@@ -972,7 +959,7 @@ export default function POS() {
       // CTRL + SHIFT + TAB: Switch Menu Context (Fast Food / Restaurant / Deals)
       if (e.ctrlKey && e.shiftKey && e.key === 'Tab') {
         e.preventDefault()
-        const contexts: ('Fast Food' | 'Restaurant' | 'Deals')[] = ['Fast Food', 'Restaurant', 'Deals']
+        const contexts: ('Restaurant' | 'Deals')[] = ['Restaurant', 'Deals']
         const currentContext = usePosStore.getState().menuContext
         const nextIndex = (contexts.indexOf(currentContext as any) + 1) % contexts.length
         usePosStore.getState().setMenuContext(contexts[nextIndex])
@@ -1075,15 +1062,15 @@ export default function POS() {
         case "F1":
           // Switch to Fast Food section
           e.preventDefault()
-          usePosStore.getState().setMenuContext('Fast Food')
+          usePosStore.getState().setMenuContext('Restaurant')
           setActiveCategory("All")
           setGridSelectedIndex(0)
           setIsCartMode(false)
           break
         case "F2":
-          // Switch to Restaurant section
+          // Switch to Deals section
           e.preventDefault()
-          usePosStore.getState().setMenuContext('Restaurant')
+          usePosStore.getState().setMenuContext('Deals')
           setActiveCategory("All")
           setGridSelectedIndex(0)
           setIsCartMode(false)
@@ -1778,30 +1765,33 @@ export default function POS() {
                               key={product.id}
                               onMouseEnter={() => setSearchSelectedIndex(index)}
                               onClick={() => handleProductClick(product)}
-                              className={`w-full flex items-center gap-4 p-3 rounded-xl text-left transition-colors ${isSelected ? 'bg-secondary border-orange-500/50' : 'bg-transparent border-transparent'} border`}
+                              className={`w-full flex items-center justify-between p-3 rounded-xl text-left transition-colors ${isSelected ? 'bg-secondary border-orange-500/50' : 'bg-transparent border-transparent'} border`}
                             >
-                              <div className={`w-12 h-12 rounded-lg shrink-0 overflow-hidden relative ${!product.image ? getCategoryGradient(product.category) : ''}`}>
-                                {product.image ? (
-                                  <img src={product.image} alt={product.name} loading="lazy" decoding="async" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none' }} />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center text-white/50">
-                                    {getCategoryIcon(product.category)}
-                                  </div>
-                                )}
-                              </div>
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <span className="bg-background px-1.5 py-0.5 rounded text-[10px] font-bold text-muted-foreground border border-border shrink-0">{product.code}</span>
-                                  <h4 className="font-bold text-sm truncate">{product.name}</h4>
-                                </div>
-                                <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                                  <span className="font-bold text-orange-500">Rs {(product.displayPrice !== undefined ? product.displayPrice : product.price).toLocaleString()}</span>
-                                  <span>•</span>
-                                  <span className="truncate">{product.category}</span>
-                                  {(product.isPopular || product.isFavorite) && <span>•</span>}
-                                  {product.isPopular && <span className="bg-red-500/10 text-red-500 px-1 rounded font-bold text-[10px] uppercase">Popular</span>}
-                                  {product.isFavorite && <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />}
-                                </div>
+                                {(() => {
+                                  const sBi = splitBilingualName(product.name);
+                                  return (
+                                    <>
+                                      <div className="flex items-center gap-2">
+                                        {product.code && (
+                                          <span className="bg-background px-1.5 py-0.5 rounded text-[10px] font-bold text-muted-foreground border border-border shrink-0">{product.code}</span>
+                                        )}
+                                        <h4 className="font-bold text-sm text-foreground truncate">{sBi.english || sBi.primary}</h4>
+                                      </div>
+                                      {sBi.urdu && (
+                                        <p dir="rtl" className="text-xs text-muted-foreground font-semibold mt-0.5 truncate">{sBi.urdu}</p>
+                                      )}
+                                      <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                                        <span className="font-bold text-orange-500">Rs {(product.displayPrice !== undefined ? product.displayPrice : product.price).toLocaleString()}</span>
+                                        <span>•</span>
+                                        <span className="truncate">{product.category}</span>
+                                        {(product.isPopular || product.isFavorite) && <span>•</span>}
+                                        {product.isPopular && <span className="bg-red-500/10 text-red-500 px-1 rounded font-bold text-[10px] uppercase">Popular</span>}
+                                        {product.isFavorite && <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />}
+                                      </div>
+                                    </>
+                                  );
+                                })()}
                               </div>
                               {product.stockStatus && (
                                 <div className="shrink-0 text-xs font-bold text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-md">
@@ -1829,11 +1819,11 @@ export default function POS() {
               </button>
 
               <div className="shrink-0 flex items-center gap-1 bg-card p-1 rounded-xl border border-border">
-                {([['Fast Food', 'F1'], ['Restaurant', 'F2'], ['Deals', 'F3']] as const).map(([context, fkey]) => (
+                {([['Restaurant', 'F1'], ['Deals', 'F2']] as const).map(([context, fkey]) => (
                   <button
                     key={context}
                     onClick={() => { setMenuContext(context as any); setActiveCategory("All"); setIsCartMode(false); }}
-                    className={`px-3 py-2 text-xs font-bold rounded-lg transition-colors duration-200 flex items-center gap-1.5 ${menuContext === context ? 'bg-orange-500 shadow-sm text-white dark:bg-primary/16 dark:text-[#F0A868]' : 'text-muted-foreground hover:text-foreground'
+                    className={`px-3 py-2 text-xs font-bold rounded-lg transition-colors duration-200 flex items-center gap-1.5 ${menuContext === context ? 'bg-orange-400 shadow-sm text-white dark:bg-orange-500/20 dark:text-orange-300' : 'text-muted-foreground hover:text-foreground'
                       }`}
                   >
                     {context}
@@ -1873,18 +1863,18 @@ export default function POS() {
                     title={cat.name}
                     className={`shrink-0 md:w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left transition-all ${
                       isActive
-                        ? 'bg-orange-500 text-white shadow-md'
+                        ? 'bg-orange-100 text-orange-900 border border-orange-300 dark:bg-orange-500/20 dark:text-orange-200 dark:border-orange-500/30 shadow-sm font-black'
                         : 'text-foreground hover:bg-secondary bg-secondary/50 md:bg-transparent'
                     }`}
                   >
                     <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                      isActive ? 'bg-white/20 text-white' : 'bg-secondary text-muted-foreground'
+                      isActive ? 'bg-orange-200 text-orange-800 dark:bg-orange-500/30 dark:text-orange-200' : 'bg-secondary text-muted-foreground'
                     }`}>
                       {getCategoryIcon(cat.name)}
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block text-[12px] font-black leading-tight line-clamp-2 whitespace-nowrap md:whitespace-normal">{cat.name}</span>
-                      <span className={`hidden md:block text-[10px] font-bold ${isActive ? 'text-white/80' : 'text-muted-foreground'}`}>
+                      <span className={`hidden md:block text-[10px] font-bold ${isActive ? 'text-orange-700/80 dark:text-orange-300/80' : 'text-muted-foreground'}`}>
                         {count} {count === 1 ? 'item' : 'items'}
                       </span>
                     </span>
@@ -1919,9 +1909,9 @@ export default function POS() {
                     id={`category-${cat.name.replace(/\s+/g, '-')}`}
                     className="w-full text-base sm:text-xl font-black mb-4 flex items-center gap-3 p-2 sm:p-3 pl-4 rounded-xl relative overflow-hidden shadow-sm"
                   >
-                    <div className="absolute inset-0 bg-orange-600 border border-orange-700 rounded-xl pointer-events-none"></div>
-                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-orange-800 rounded-l-xl pointer-events-none"></div>
-                    <span className="relative z-10 flex items-center gap-3 text-white">
+                    <div className="absolute inset-0 bg-gradient-to-r from-orange-400 to-amber-400 border border-orange-300 dark:from-orange-500/25 dark:to-amber-500/20 dark:border-orange-500/30 rounded-xl pointer-events-none"></div>
+                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-orange-400 rounded-l-xl pointer-events-none"></div>
+                    <span className="relative z-10 flex items-center gap-3 text-white dark:text-orange-100">
                       <div className="w-8 h-8 rounded-lg bg-white/20 text-white flex items-center justify-center shrink-0">
                         {getCategoryIcon(cat.name)}
                       </div>
@@ -1929,86 +1919,94 @@ export default function POS() {
                     </span>
                   </h3>
                   )}
-                  <div className={`grid gap-4 ${gridDensity === 'small' ? 'grid-cols-4 md:grid-cols-5 xl:grid-cols-6' :
-                    gridDensity === 'medium' ? 'grid-cols-3 md:grid-cols-4 xl:grid-cols-5' :
-                      'grid-cols-2 md:grid-cols-3 xl:grid-cols-4'
+                  <div className={`grid gap-3 sm:gap-3.5 ${gridDensity === 'small' ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5' :
+                    gridDensity === 'medium' ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4' :
+                      'grid-cols-1 sm:grid-cols-2 md:grid-cols-2 xl:grid-cols-3'
                     }`}>
                     {catProducts.map((product) => {
                       const index = gridFilteredProducts.indexOf(product);
                       const isSelected = index === gridSelectedIndex;
+                      const bilingual = splitBilingualName(product.name);
+                      const catName = product.category || categories.find(c => c.id === product.category_id)?.name;
                       return (
                         <motion.div
                           id={`grid-item-${index}`}
-                          whileHover={{ y: -4 }}
-                          whileTap={{ scale: 0.96 }}
-                          transition={{ duration: 0.15 }}
+                          whileHover={{ y: -2 }}
+                          whileTap={{ scale: 0.98 }}
+                          transition={{ duration: 0.12 }}
                           key={product.id}
                           onMouseEnter={() => setGridSelectedIndex(index)}
                           onClick={() => handleProductClick(product)}
-                          className={`rounded-[1.25rem] shadow-sm overflow-hidden flex flex-col text-left hover:opacity-90 transition-all group relative cursor-pointer ${getCategoryStyles(product.category || categories.find(c => c.id === product.category_id)?.name)} ${isSelected ? 'ring-4 ring-orange-500 dark:ring-primary shadow-[0_8px_30px_rgba(249,115,22,0.3)] scale-[1.02]' : 'hover:shadow-[0_8px_30px_rgba(0,0,0,0.15)]'}`}
+                          className={`rounded-2xl shadow-sm border border-border/80 bg-card overflow-hidden flex flex-col justify-between text-left hover:border-orange-400/60 transition-all group relative cursor-pointer min-h-[92px] ${isSelected ? 'ring-2 ring-orange-400 shadow-[0_4px_16px_rgba(251,146,60,0.2)]' : 'hover:shadow-md'}`}
                         >
-                          {gridDensity !== 'small' && (
-                            <div className={`${gridDensity === 'large' ? 'h-32' : 'h-24'} w-full relative overflow-hidden shrink-0 ${!product.image ? getCategoryGradient(product.category || categories.find(c => c.id === product.category_id)?.name) : ''}`}>
-                              {product.isDeal ? (
-                                <div className="w-full h-full flex flex-col items-center justify-center p-2 text-white/90 bg-black/10 mix-blend-overlay">
-                                  <div className="w-full text-[10px] overflow-hidden text-center space-y-0.5">
-                                    {product.components?.slice(0, gridDensity === 'large' ? 5 : 4).map((c: any, i: number) => {
-                                      const productName = c.name || products.find(p => p.id === c.product_id)?.name || categories.find(cat => cat.id === c.target_category_id)?.name || (c.allowed_product_ids ? 'Choice of Item' : 'Item');
-                                      const variant = c.target_variant_name ? ` (${c.target_variant_name})` : ""
-                                      return <p key={i} className="truncate">{c.quantity}x {productName}{variant}</p>;
-                                    })}
-                                    {product.components?.length > (gridDensity === 'large' ? 5 : 4) && <p>...</p>}
-                                  </div>
-                                </div>
-                              ) : product.image ? (
-                                <img src={product.image} alt={product.name} loading="lazy" decoding="async" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none' }} />
-                              ) : (
-                                <div className="w-full h-full flex flex-col items-center justify-center text-white/50 mix-blend-overlay">
-                                  {getCategoryIcon(product.category)}
+                          <div className="p-2.5 sm:p-3 flex flex-col justify-between flex-1">
+                            <div>
+                              {/* Title on Left, Code on Right (Category badge removed as requested) */}
+                              <div className="flex items-start justify-between gap-2">
+                                <h4 className="font-extrabold text-[14px] sm:text-[15px] leading-snug text-foreground tracking-tight flex-1">
+                                  {bilingual.english || bilingual.primary}
+                                </h4>
+                                {product.code && (
+                                  <span className="text-[10px] font-mono font-black px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 shrink-0">
+                                    #{product.code}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Lower Urdu Name in parentheses */}
+                              {bilingual.urdu && (
+                                <p dir="rtl" className="text-xs sm:text-[13px] font-semibold text-muted-foreground mt-0.5 leading-snug font-sans">
+                                  ({bilingual.urdu})
+                                </p>
+                              )}
+
+                              {/* Deal Components if any */}
+                              {product.isDeal && product.components && product.components.length > 0 && (
+                                <div className="mt-1.5 p-1 rounded-lg bg-secondary/50 text-[10px] text-muted-foreground space-y-0.5">
+                                  {product.components.slice(0, 3).map((c: any, ci: number) => {
+                                    const cName = c.name || products.find(p => p.id === c.product_id)?.name || 'Item';
+                                    const cBi = splitBilingualName(cName);
+                                    return (
+                                      <p key={ci} className="truncate">{c.quantity}x {cBi.english || cBi.primary}</p>
+                                    );
+                                  })}
                                 </div>
                               )}
-                              {/* Subtle Code Badge */}
-                              <div className="absolute top-2 right-2 bg-background/80 backdrop-blur-md px-2 py-0.5 rounded-md text-[10px] font-bold tracking-widest text-foreground shadow-sm">
-                                {product.code}
-                              </div>
                             </div>
-                          )}
-                          <div className="p-4 flex flex-col flex-1 relative">
-                            {gridDensity === 'small' && (
-                              <div className="absolute top-3 right-3 text-[10px] font-bold text-muted-foreground bg-secondary px-1.5 py-0.5 rounded">
-                                {product.code}
-                              </div>
-                            )}
-                            <h4 className={`font-bold line-clamp-3 leading-tight flex-1 text-foreground ${gridDensity === 'small' ? 'pr-8' : 'pr-0'} ${gridDensity === 'large' ? 'text-base' : 'text-[13px]'}`}>
-                              {product.name}
-                            </h4>
-                            {!(product.variants && product.variants.length > 0) && (
-                              <p className={`text-orange-500 dark:text-primary font-black mt-2 ${gridDensity === 'large' ? 'text-2xl' : 'text-lg'}`}>
-                                Rs {product.displayPrice !== undefined ? product.displayPrice.toLocaleString() : product.price.toLocaleString()}
-                              </p>
-                            )}
-                            
-                            {/* Variant Chips */}
-                            {product.variants && product.variants.length > 0 && (
-                              <div className="mt-3 grid grid-cols-2 gap-1.5" onClick={(e) => e.stopPropagation()}>
-                                {product.variants.map((v: any, vi: number) => (
-                                  <button
-                                    key={v.id || `${product.id}-var-${vi}`}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleProductClick(product, v.name);
-                                    }}
-                                    className="text-[10px] sm:text-xs font-bold bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-500 hover:text-white transition-colors border border-orange-500/30 rounded-md px-1 py-1.5 flex flex-col items-center justify-center truncate"
-                                  >
-                                    <span className="truncate w-full">{v.name}</span>
-                                    <span className="text-[9px] opacity-80">Rs {v.price.toLocaleString()}</span>
-                                  </button>
-                                ))}
-                              </div>
-                            )}
+
+                            {/* Price / Variant Chips */}
+                            <div className="mt-2 pt-1.5 border-t border-border/40">
+                              {!(product.variants && product.variants.length > 0) ? (
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[11px] font-semibold text-muted-foreground">Price</span>
+                                  <p className="text-orange-600 dark:text-orange-400 font-black text-base sm:text-[17px]">
+                                    {product.displayPrice !== undefined ? product.displayPrice.toLocaleString() : product.price.toLocaleString()}
+                                  </p>
+                                </div>
+                              ) : (
+                                <div className="grid grid-cols-2 gap-2" onClick={(e) => e.stopPropagation()}>
+                                  {product.variants.map((v: any, vi: number) => {
+                                    const vCleanName = (v.name || '').replace(/[()ہاففل]/g, '').trim() || v.name;
+                                    return (
+                                      <button
+                                        key={v.id || `${product.id}-var-${vi}`}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleProductClick(product, v.name);
+                                        }}
+                                        className="text-xs font-bold bg-orange-500/10 text-orange-700 dark:text-orange-300 hover:bg-orange-400 hover:text-white transition-colors border border-orange-500/25 rounded-lg px-2.5 py-1.5 flex items-center justify-between gap-2.5 text-left"
+                                      >
+                                        <span className="font-extrabold uppercase tracking-wide">{vCleanName}</span>
+                                        <span className="font-black text-[11px] shrink-0">{v.price.toLocaleString()}</span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </motion.div>
-                      )
+                      );
                     })}
                   </div>
                 </div>

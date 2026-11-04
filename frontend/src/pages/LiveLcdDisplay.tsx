@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { 
   Flame, Clock, CheckCircle2, Volume2, VolumeX, Maximize2, Minimize2, 
-  Tv, ChefHat, Users, RefreshCw, ZoomIn, ZoomOut, AlertTriangle, ArrowRight,
-  UtensilsCrossed, Package, ShoppingBag, Bike
+  Tv, ChefHat, Users, RefreshCw, ZoomIn, ZoomOut, AlertTriangle, ArrowRight, ArrowLeft,
+  UtensilsCrossed, Package, ShoppingBag, Bike, LayoutDashboard, ShoppingCart
 } from 'lucide-react'
 import { kitchenService } from '../services/kitchenService'
 import { formatReceiptOrderNumber } from '../utils/receiptOrderNumber'
@@ -35,6 +36,16 @@ export interface LcdTicket {
 }
 
 export const LiveLcdDisplay: React.FC = () => {
+  const navigate = useNavigate()
+
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1)
+    } else {
+      navigate('/dashboard')
+    }
+  }
+
   // View mode: 'kitchen' = Chef prep screen, 'customer' = Fast-food pickup screen, 'grid' = All tickets grid
   const [viewMode, setViewMode] = useState<'kitchen' | 'customer' | 'grid'>(() => {
     return (localStorage.getItem('df_lcd_mode') as any) || 'kitchen'
@@ -86,6 +97,17 @@ export const LiveLcdDisplay: React.FC = () => {
     }
     document.addEventListener('fullscreenchange', handleFsChange)
     return () => document.removeEventListener('fullscreenchange', handleFsChange)
+  }, [])
+
+  // Keyboard shortcut: Esc to go back (when not exiting native fullscreen)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !document.fullscreenElement) {
+        handleBack()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
   const toggleFullscreen = () => {
@@ -328,21 +350,48 @@ export const LiveLcdDisplay: React.FC = () => {
     >
       {/* ── TOP LCD TV CONTROL BAR ── */}
       <header className="bg-neutral-900 border-b border-neutral-800 px-6 py-3 flex items-center justify-between shrink-0 shadow-lg">
-        {/* Left: Branding & Live Indicator */}
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/20">
-            <Flame className="w-6 h-6 text-neutral-950 stroke-[2.5]" />
+        {/* Left: Navigation, Branding & Live Indicator */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleBack}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white border border-neutral-700 transition-all text-xs font-black tracking-wide shadow-md hover:scale-105 active:scale-95"
+            title="Back to Previous Screen (Esc)"
+          >
+            <ArrowLeft className="w-4 h-4 text-amber-400 stroke-[2.5]" />
+            <span>Back</span>
+          </button>
+
+          <button
+            onClick={() => navigate('/pos')}
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 text-neutral-300 hover:text-white border border-neutral-700 transition-all text-xs font-bold"
+            title="Go to POS"
+          >
+            <ShoppingCart className="w-3.5 h-3.5 text-primary" />
+            <span>POS</span>
+          </button>
+
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 text-neutral-300 hover:text-white border border-neutral-700 transition-all text-xs font-bold"
+            title="Go to Dashboard"
+          >
+            <LayoutDashboard className="w-3.5 h-3.5 text-blue-400" />
+            <span>Dashboard</span>
+          </button>
+
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/20 ml-1 shrink-0">
+            <Flame className="w-5 h-5 text-neutral-950 stroke-[2.5]" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-black tracking-wider uppercase text-neutral-100 flex items-center gap-2">
-                Shawarma Live Screen
+              <h1 className="text-lg font-black tracking-wider uppercase text-neutral-100 flex items-center gap-2">
+                Live LCD Screen
               </h1>
-              <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[11px] font-black tracking-widest uppercase flex items-center gap-1.5 animate-pulse">
-                <span className="w-2 h-2 rounded-full bg-emerald-500"></span> LIVE LCD
+              <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] font-black tracking-widest uppercase flex items-center gap-1.5 animate-pulse">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> LIVE
               </span>
             </div>
-            <p className="text-xs font-semibold text-neutral-400">
+            <p className="text-[11px] font-semibold text-neutral-400">
               Kitchen Display & Token Monitor System
             </p>
           </div>
@@ -767,7 +816,7 @@ export const LiveLcdDisplay: React.FC = () => {
                 Please have your receipt ready • Thank you for your patience!
               </div>
               <div className="text-neutral-500 font-mono">
-                SH-POS
+                Friend's POS
               </div>
             </div>
           </div>

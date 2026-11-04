@@ -11,6 +11,21 @@ import { ToastProvider } from './components/ui/ToastProvider.tsx'
 import { ProtectedRoute } from './components/ProtectedRoute.tsx'
 import { AppInitializer } from './components/AppInitializer.tsx'
 import { useUIStore } from './store/uiStore.ts'
+import { PWAInstallBanner } from './components/PWAInstallBanner.tsx'
+
+// Register PWA Service Worker for Mobile/Tablet App installability
+if ('serviceWorker' in navigator && (window.location.protocol.startsWith('http') || window.location.protocol.startsWith('https'))) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').then(
+      (registration) => {
+        console.log('[PWA] Service Worker registered with scope:', registration.scope);
+      },
+      (error) => {
+        console.warn('[PWA] Service Worker registration skipped/failed:', error);
+      }
+    );
+  });
+}
 const Dashboard = lazy(() => import('./pages/Dashboard.tsx'))
 const POS = lazy(() => import('./pages/POS.tsx'))
 const Orders = lazy(() => import('./pages/Orders.tsx'))
@@ -85,5 +100,6 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <RouterProvider router={router} />
     <ToastProvider />
+    <PWAInstallBanner />
   </StrictMode>,
 )

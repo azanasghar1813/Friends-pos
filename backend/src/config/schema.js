@@ -7,7 +7,7 @@ import { z } from 'zod';
  */
 export const envSchema = z.object({
   // App
-  APP_NAME: z.string().default('SH POS'),
+  APP_NAME: z.string().default("Friend's POS"),
   APP_VERSION: z.string().default('1.0.0'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   

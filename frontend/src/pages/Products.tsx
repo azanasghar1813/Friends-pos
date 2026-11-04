@@ -8,6 +8,7 @@ import {
 }
   from "lucide-react"
 import { menuService } from "../services/menuService"
+import { splitBilingualName } from "../utils/bilingual"
 import { useAuthStore } from "../store/authStore"
 import { toast } from "../store/toastStore"
 
@@ -39,7 +40,7 @@ export default function Products() {
   const [sortBy, setSortBy] = useState("Code")
   const [showFilters, setShowFilters] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [mainTab, setMainTab] = useState<"Fast Food" | "Restaurant" | "Deals" | "Drinks">("Fast Food")
+  const [mainTab, setMainTab] = useState<"Restaurant" | "Deals">("Restaurant")
 
   // Drawer States
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
@@ -79,12 +80,8 @@ export default function Products() {
       const activeCats = allFetchedCats.filter((c: any) => c.status === "Active" || c.lifecycle_state === "ACTIVE")
 
       const getContext = (cat: any): string | null => {
-        if (cat.name === 'Fast Food' || cat.name === 'Restaurant' || cat.name === 'Deals') return cat.name;
-        if (cat.parent_id) {
-          const parent = activeCats.find((p: any) => p.id === cat.parent_id);
-          if (parent) return getContext(parent);
-        }
-        return null;
+        if (cat.name === 'Deals') return 'Deals';
+        return 'Restaurant';
       }
 
       const catsWithContext = activeCats.map((c: any) => ({
@@ -288,7 +285,10 @@ export default function Products() {
       }
 
       // Find the category_id from the categoriesList based on the selected category name
-      const categoryObj = categoriesList.find(c => c.name === selectedProduct.category)
+      const categoryObj = categoriesList.find((c: any) => 
+        (selectedProduct.category && (String(c.name).toLowerCase() === String(selectedProduct.category).toLowerCase() || c.id === selectedProduct.category)) ||
+        (selectedProduct.category_id && c.id === selectedProduct.category_id)
+      ) || categoriesList[0];
       
       const payload: any = {
         name: selectedProduct.name,
@@ -310,6 +310,10 @@ export default function Products() {
       if (selectedProduct.code) payload.product_code = String(selectedProduct.code);
       if (selectedProduct.description) payload.description = String(selectedProduct.description);
       if (categoryObj && categoryObj.id) payload.category_id = categoryObj.id;
+      if (!payload.category_id) {
+        toast.error("Category Required", "Please select a valid category.");
+        return;
+      }
 
 
       const formatResponseProduct = (data: any) => {
@@ -441,7 +445,8 @@ export default function Products() {
       id: "",
       barcode: `8801${Math.floor(100000 + Math.random() * 900000)}`,
       name: "",
-      category: "Burgers",
+      category: categoriesList.find((c: any) => c.name === mainTab)?.name || categoriesList[0]?.name || "Fast Food",
+      category_id: categoriesList.find((c: any) => c.name === mainTab)?.id || categoriesList[0]?.id || "",
       kitchen: "Fast Food",
       price: 0,
       costPrice: 0,
@@ -553,10 +558,8 @@ export default function Products() {
       const context = catObj?.menuContext || 'all'
 
       let matchMainTab = true
-      if (mainTab === "Fast Food") matchMainTab = (p.menuContext === "Fast Food" || p.kitchen === "Fast Food") && !isDeal && !isDrink
-      else if (mainTab === "Restaurant") matchMainTab = (p.menuContext === "Restaurant" || p.kitchen === "Restaurant") && !isDeal && !isDrink
+      if (mainTab === "Restaurant") matchMainTab = !isDeal
       else if (mainTab === "Deals") matchMainTab = isDeal
-      else if (mainTab === "Drinks") matchMainTab = isDrink
 
       const matchCat = selectedCategory === "All" || p.category === selectedCategory
       const matchKitchen = selectedKitchen === "All" || p.kitchen === selectedKitchen
@@ -757,7 +760,7 @@ export default function Products() {
                       setSelectedStatus("All")
                       setSortBy("Code")
                       setSearch("")
-                      setMainTab("Fast Food")
+                      setMainTab("Restaurant")
                     }}
                     className="w-full h-9 rounded-lg border border-border hover:bg-secondary text-xs font-black uppercase text-center transition-colors"
                   >
@@ -798,7 +801,7 @@ export default function Products() {
             <div className="flex flex-col gap-8">
               {(mainTab === "Deals"
                 ? [{ id: "deals-root", name: "Deals", menuContext: "Deals" }]
-                : categoriesList.filter((c) => selectedCategory === 'All' ? ((c.menuContext as any) === mainTab || (mainTab === 'Drinks' && (c.name.toLowerCase().includes('drink') || c.name.toLowerCase().includes('beverage')))) : c.name === selectedCategory)
+                : categoriesList.filter((c) => selectedCategory === 'All' ? ((c.menuContext as any) === mainTab) : c.name === selectedCategory)
               ).map(cat => {
                   const catProducts = mainTab === "Deals"
                     ? filteredAndSorted.filter(p => p.isDeal)
@@ -859,7 +862,15 @@ export default function Products() {
                                   />
                                 </div>
 
-                                <h4 className="text-[11px] font-black text-foreground mt-1 leading-snug group-hover:text-primary transition-colors line-clamp-2">{product.name}</h4>
+                                {(() => {
+                                  const pBi = splitBilingualName(product.name);
+                                  return (
+                                    <div className="mt-1">
+                                      <h4 className="text-[12px] font-black text-foreground leading-snug group-hover:text-primary transition-colors line-clamp-1">{pBi.english || pBi.primary}</h4>
+                                      {pBi.urdu && <p dir="rtl" className="text-[11px] font-semibold text-muted-foreground line-clamp-1">{pBi.urdu}</p>}
+                                    </div>
+                                  );
+                                })()}
 
                                 <div className="flex flex-wrap gap-1 mt-1.5 items-center">
                                   <span className="text-[9px] text-muted-foreground font-semibold px-1.5 py-0.5 bg-secondary rounded">{product.category}</span>
@@ -917,7 +928,7 @@ export default function Products() {
             <div className="flex flex-col gap-8">
               {(mainTab === "Deals"
                 ? [{ id: "deals-root", name: "Deals", menuContext: "Deals" }]
-                : categoriesList.filter((c) => selectedCategory === 'All' ? ((c.menuContext as any) === mainTab || (mainTab === 'Drinks' && (c.name.toLowerCase().includes('drink') || c.name.toLowerCase().includes('beverage')))) : c.name === selectedCategory)
+                : categoriesList.filter((c) => selectedCategory === 'All' ? ((c.menuContext as any) === mainTab) : c.name === selectedCategory)
               ).map(cat => {
                   const catProducts = mainTab === "Deals"
                     ? filteredAndSorted.filter(p => p.isDeal)
@@ -1427,8 +1438,15 @@ export default function Products() {
                         <label className="text-xs uppercase font-black text-muted-foreground">Category</label>
                         <select
                           disabled={drawerMode === "view"}
-                          value={selectedProduct.category}
-                          onChange={e => setSelectedProduct({ ...selectedProduct, category: e.target.value })}
+                          value={selectedProduct.category || categoriesList[0]?.name || ""}
+                          onChange={e => {
+                            const chosen = categoriesList.find((c: any) => c.name === e.target.value || c.id === e.target.value);
+                            setSelectedProduct({ 
+                              ...selectedProduct, 
+                              category: chosen?.name || e.target.value,
+                              category_id: chosen?.id || selectedProduct.category_id
+                            });
+                          }}
                           className="w-full h-10 px-3 rounded-xl bg-secondary/80 border border-border focus:border-orange-500 outline-none text-xs font-bold text-foreground disabled:opacity-60"
                         >
                           {categoriesList.map(cat => (

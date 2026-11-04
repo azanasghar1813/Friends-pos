@@ -1,9 +1,9 @@
 {
   "name": "sh-pos",
-  "productName": "SH POS",
+  "productName": "Friend's POS",
   "version": "1.0.0",
-  "author": "SH POS",
-  "description": "SH POS - Shawarma & Fast Food POS System",
+  "author": "Friend's POS",
+  "description": "Friend's POS - Restaurant & Fast Food POS System",
   "main": "main.js",
   "type": "module",
   "scripts": {
@@ -45,8 +45,8 @@
     "electron-builder": "^25.1.8"
   },
   "build": {
-    "appId": "com.shpos.app",
-    "productName": "SH POS",
+    "appId": "com.friendspos.app",
+    "productName": "Friend's POS",
     "asarUnpack": [
       "backend/**/*",
       "backend/.env",
@@ -89,7 +89,7 @@
     ],
     "win": {
       "target": "nsis",
-      "executableName": "SH POS"
+      "executableName": "Friend's POS"
     },
     "nsis": {
       "oneClick": true,
@@ -101,7 +101,7 @@
       "useZip": true,
       "createDesktopShortcut": "always",
       "createStartMenuShortcut": true,
-      "shortcutName": "SH POS",
+      "shortcutName": "Friend's POS",
       "include": "build/installer.nsh",
       "warningsAsErrors": false
     },

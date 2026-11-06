@@ -27,6 +27,7 @@ export function CustomerPanelModal({ isOpen, onClose, onSuccess, onPrint }: Cust
   const [isFavourite, setIsFavourite] = useState(false)
   const [editingCustomerId, setEditingCustomerId] = useState<string | null>(null)
   const [suggestedCustomer, setSuggestedCustomer] = useState<any | null>(null)
+  const [mobileTab, setMobileTab] = useState<'form' | 'list'>('form')
 
   const nameRef = useRef<HTMLInputElement>(null)
   const phoneRef = useRef<HTMLInputElement>(null)
@@ -307,6 +308,7 @@ export function CustomerPanelModal({ isOpen, onClose, onSuccess, onPrint }: Cust
     setIsVip(!!(c.is_vip || c.isVip))
     setIsFavourite(true)
     setEditingCustomerId(c.id)
+    setMobileTab('form')
   }
 
   const handleDeleteClick = async (id: string) => {
@@ -404,10 +406,45 @@ export function CustomerPanelModal({ isOpen, onClose, onSuccess, onPrint }: Cust
           initial={{ scale: 0.95, opacity: 0 }} 
           animate={{ scale: 1, opacity: 1 }} 
           exit={{ scale: 0.95, opacity: 0 }}
-          className="bg-card w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden flex h-[80vh] border border-border"
+          className="bg-card w-[95vw] md:w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row h-[92vh] md:h-[80vh] border border-border"
         >
+          {/* Mobile Tab Switcher */}
+          <div className="md:hidden flex items-center bg-secondary/80 border-b border-border p-2 shrink-0 gap-2">
+            <button
+              type="button"
+              onClick={() => setMobileTab('form')}
+              className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+                mobileTab === 'form'
+                  ? 'bg-orange-500 text-white shadow-md'
+                  : 'bg-card text-muted-foreground hover:text-foreground border border-border/40'
+              }`}
+            >
+              <User className="w-4 h-4" />
+              <span>{editingCustomerId ? 'Edit Customer' : 'Customer Info'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileTab('list')}
+              className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+                mobileTab === 'list'
+                  ? 'bg-orange-500 text-white shadow-md'
+                  : 'bg-card text-muted-foreground hover:text-foreground border border-border/40'
+              }`}
+            >
+              <Search className="w-4 h-4" />
+              <span>Directory ({filteredCustomers.length})</span>
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2 bg-card hover:bg-secondary border border-border/40 rounded-xl transition-colors shrink-0"
+            >
+              <X className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </div>
+
           {/* Left Panel: Search & List */}
-          <div className="customer-list-container w-1/2 border-r border-border flex flex-col bg-background">
+          <div className={`customer-list-container w-full md:w-1/2 border-r-0 md:border-r border-border flex flex-col bg-background h-full overflow-hidden ${mobileTab === 'list' ? 'flex' : 'hidden md:flex'}`}>
             <div className="p-4 border-b border-border bg-card">
               <h2 className="text-lg font-black text-foreground mb-4">Customer Directory</h2>
               <div className="relative">
@@ -422,7 +459,7 @@ export function CustomerPanelModal({ isOpen, onClose, onSuccess, onPrint }: Cust
                   className="w-full h-10 pl-9 pr-4 rounded-xl bg-secondary border-none focus:ring-2 focus:ring-orange-500 outline-none text-sm font-semibold"
                 />
               </div>
-              <div className="grid grid-cols-4 gap-1.5 mt-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mt-3">
                 {QUICK_ADDRESSES.map((addr) => (
                   <button
                     key={addr}
@@ -470,7 +507,7 @@ export function CustomerPanelModal({ isOpen, onClose, onSuccess, onPrint }: Cust
                           </div>
                         </div>
                       </button>
-                      <div className="flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                      <div className="flex flex-col gap-1.5 opacity-100 md:opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                         <button id={`edit-btn-${i}`} onClick={(e) => { e.stopPropagation(); handleEditClick(c); }} className="p-2 bg-background hover:bg-orange-500 text-muted-foreground hover:text-white focus:bg-orange-500 focus:text-white shadow-sm border border-border outline-none rounded-lg transition-all"><Pencil className="w-4 h-4" /></button>
                         <button id={`delete-btn-${i}`} onClick={(e) => { e.stopPropagation(); handleDeleteClick(c.id); }} className="p-2 bg-background hover:bg-red-500 text-muted-foreground hover:text-white focus:bg-red-500 focus:text-white shadow-sm border border-border outline-none rounded-lg transition-all"><Trash2 className="w-4 h-4" /></button>
                       </div>
@@ -482,16 +519,16 @@ export function CustomerPanelModal({ isOpen, onClose, onSuccess, onPrint }: Cust
           </div>
 
           {/* Right Panel: Create / Details */}
-          <div className="customer-form-container w-1/2 flex flex-col bg-card">
-            <div className="p-4 border-b border-border flex items-center justify-between">
-              <h2 className="text-lg font-black text-foreground">{editingCustomerId ? 'Edit Customer' : 'Quick Create'}</h2>
-              <button onClick={onClose} className="p-2 hover:bg-secondary rounded-xl transition-colors">
+          <div className={`customer-form-container w-full md:w-1/2 flex flex-col bg-card h-full overflow-hidden ${mobileTab === 'form' ? 'flex' : 'hidden md:flex'}`}>
+            <div className="p-3.5 sm:p-4 border-b border-border flex items-center justify-between">
+              <h2 className="text-base sm:text-lg font-black text-foreground">{editingCustomerId ? 'Edit Customer' : 'Quick Create'}</h2>
+              <button onClick={onClose} className="hidden md:flex p-2 hover:bg-secondary rounded-xl transition-colors">
                 <X className="w-5 h-5 text-muted-foreground" />
               </button>
             </div>
             
-            <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-6 flex flex-col space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-3.5 sm:p-6 flex flex-col space-y-3.5 sm:space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Name</label>
                   <div className="relative bg-secondary rounded-xl flex items-center overflow-hidden">

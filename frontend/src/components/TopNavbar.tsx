@@ -4,9 +4,10 @@ import { useAuthStore } from "../store/authStore"
 import { authService } from "../services/authService"
 import { usePrinterStore } from "../store/printerStore"
 import { apiClient } from "../api/client"
-import { Bell,  LogOut, Users, X, ChevronDown, Lock, User as UserIcon, Wifi, WifiOff, Printer, Clock, RefreshCw, Calendar, Search, Settings, Sun, Moon, Minus, Square, Loader2, Menu, Tv } from "lucide-react"
+import { Bell,  LogOut, Users, X, ChevronDown, Lock, User as UserIcon, Wifi, WifiOff, Printer, Clock, RefreshCw, Calendar, Search, Settings, Sun, Moon, Minus, Square, Loader2, Menu, Tv, Smartphone, QrCode } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
+import { MobileAccessModal } from "./MobileAccessModal"
 
 export default function TopNavbar() {
   const { toggleSidebar } = useUIStore()
@@ -15,6 +16,7 @@ export default function TopNavbar() {
   
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isSwitchModalOpen, setIsSwitchModalOpen] = useState(false)
+  const [isMobileAccessOpen, setIsMobileAccessOpen] = useState(false)
   
   // Switch Cashier State
   const [cashiers, setCashiers] = useState<{ id: string, name: string, username: string, role: string }[]>([])
@@ -285,6 +287,15 @@ export default function TopNavbar() {
           </button>
 
           <button
+            onClick={() => setIsMobileAccessOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/15 text-emerald-500 hover:bg-emerald-500/25 border border-emerald-500/30 text-xs font-black uppercase tracking-wider transition-all shadow-sm cursor-pointer"
+            title="Scan QR Code to open & install mobile POS on phones / tablets"
+          >
+            <QrCode className="w-3.5 h-3.5 stroke-[2.5]" />
+            <span>Mobile QR</span>
+          </button>
+
+          <button
             onClick={() => {
               const root = document.documentElement;
               if (root.classList.contains('dark')) root.classList.remove('dark');
@@ -440,6 +451,11 @@ export default function TopNavbar() {
           </div>
         )}
       </AnimatePresence>
+
+      <MobileAccessModal
+        isOpen={isMobileAccessOpen}
+        onClose={() => setIsMobileAccessOpen(false)}
+      />
     </div>
   )
 }

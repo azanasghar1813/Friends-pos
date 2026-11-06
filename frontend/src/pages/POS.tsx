@@ -2062,12 +2062,7 @@ export default function POS() {
                 </button>
               </div>
 
-              <div className="text-right">
-                <span className={`inline-block text-[10px] font-black px-2 py-0.5 rounded uppercase border ${isPaidPrint ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20'
-                  }`}>
-                  {isPaidPrint ? 'Paid' : 'Unpaid'}
-                </span>
-              </div>
+              
             </div>
 
             <div className="flex w-full rounded-lg border border-blue-500 overflow-hidden shadow-sm">
@@ -2383,54 +2378,22 @@ export default function POS() {
                   />
                 </div>
 
-                <div className="grid grid-cols-5 gap-1.5 pb-1 flex-1">
-                  <button
-                    onClick={() => setIsPaidPrint(!isPaidPrint)}
-                    className={`p-1 font-black rounded-lg flex flex-col items-center justify-center gap-0.5 transition-colors border ${isPaidPrint
-                      ? 'bg-green-100 text-green-700 hover:bg-green-200 border-green-300 dark:bg-[#5FBF88]/14 dark:text-[#5FBF88] dark:border-transparent dark:hover:bg-[#5FBF88]/20'
-                      : 'bg-red-100 text-red-700 hover:bg-red-200 border-red-300 dark:bg-[#E5605A]/14 dark:text-[#E5605A] dark:border-transparent dark:hover:bg-[#E5605A]/20'
-                      }`}
-                  >
-                    <span className="text-[10px] uppercase text-center leading-tight">
-                      {isPaidPrint ? 'Paid' : 'Unpaid'}<br />
-                      <span className="text-[7px] opacity-70 font-bold">(Ctrl+P)</span>
-                    </span>
-                  </button>
-                  <button
-                    onClick={toggleTax}
-                    className={`p-1 font-black rounded-lg flex flex-col items-center justify-center gap-0.5 transition-colors border ${isTaxEnabled
-                      ? 'bg-orange-100 text-orange-700 hover:bg-orange-200 border-orange-300 dark:bg-[#E8A33D]/14 dark:text-[#E8A33D] dark:border-transparent dark:hover:bg-[#E8A33D]/20'
-                      : 'bg-secondary/60 text-muted-foreground hover:bg-secondary hover:text-foreground border-transparent hover:border-border dark:bg-[#21242B] dark:text-[#9BA2AE]'
-                      }`}
-                  >
-                    <Tag className={`w-4 h-4 ${isTaxEnabled ? 'stroke-[2.5]' : 'stroke-[1.5]'}`} />
-                    <span className="text-[9px] uppercase text-center leading-tight font-black">
-                      Charges<br />
-                      <span className="text-[7px] opacity-70">(Ctrl+S)</span>
-                    </span>
-                  </button>
-                  {false && <button
-                    onClick={() => setIsKdsAutoSend(!isKdsAutoSend)}
-                    className={`p-1 font-black rounded-lg flex flex-col items-center justify-center gap-0.5 transition-colors border ${isKdsAutoSend
-                      ? 'bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-300 dark:bg-[#3D85E8]/14 dark:text-[#3D85E8] dark:border-transparent dark:hover:bg-[#3D85E8]/20'
-                      : 'bg-secondary/60 text-muted-foreground hover:bg-secondary hover:text-foreground border-transparent hover:border-border dark:bg-[#21242B] dark:text-[#9BA2AE]'
-                      }`}
-                  >Auto KDS</button>}
+                <div className="grid grid-cols-3 gap-2 pb-1 flex-1">
                   <button
                     onClick={handleSendKot}
                     disabled={cart.length === 0}
-                    className="p-1 bg-white hover:bg-red-50 text-red-600 border border-red-200 hover:border-red-400 font-black rounded-lg disabled:opacity-50 flex flex-col items-center justify-center gap-0.5 transition-colors shadow-sm"
+                    className="p-1.5 bg-white hover:bg-red-50 text-red-600 border border-red-200 hover:border-red-400 font-black rounded-xl disabled:opacity-50 flex flex-col items-center justify-center gap-1 transition-colors shadow-sm"
                   >
                     <Printer className="w-4 h-4 stroke-[2]" />
-                    <span className="text-[9px] uppercase">KOT</span>
+                    <span className="text-[10px] uppercase font-black">KOT</span>
                   </button>
                   <button
                     onClick={handlePrintReceiptFromCart}
                     disabled={cart.length === 0}
-                    className="p-1 bg-white hover:bg-orange-50 text-[#ff7b00] border border-[#ff7b00]/30 hover:border-[#ff7b00]/60 font-black rounded-lg disabled:opacity-50 flex flex-col items-center justify-center gap-0.5 transition-colors shadow-sm"
+                    className="p-1.5 bg-white hover:bg-orange-50 text-[#ff7b00] border border-[#ff7b00]/30 hover:border-[#ff7b00]/60 font-black rounded-xl disabled:opacity-50 flex flex-col items-center justify-center gap-1 transition-colors shadow-sm"
                   >
                     <Printer className="w-4 h-4 stroke-[2]" />
-                    <span className="text-[9px] uppercase">Print</span>
+                    <span className="text-[10px] uppercase font-black">Print</span>
                   </button>
                   <button
                     onClick={() => {
@@ -2439,10 +2402,10 @@ export default function POS() {
                       setOrderNotes("");
                     }}
                     disabled={cart.length === 0}
-                    className="p-1 bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground font-black rounded-lg disabled:opacity-50 flex flex-col items-center justify-center gap-0.5 transition-colors border border-transparent hover:border-border dark:bg-[#21242B] dark:text-[#9BA2AE]"
+                    className="p-1.5 bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground font-black rounded-xl disabled:opacity-50 flex flex-col items-center justify-center gap-1 transition-colors border border-transparent hover:border-border dark:bg-[#21242B] dark:text-[#9BA2AE]"
                   >
                     <XCircle className="w-4 h-4 stroke-[1.5]" />
-                    <span className="text-[9px] uppercase">Clear</span>
+                    <span className="text-[10px] uppercase font-black">Clear</span>
                   </button>
                 </div>
               </div>

@@ -3,6 +3,7 @@ import { dbEngine } from '../database/sqlite.js';
 import { configService } from '../services/configService.js';
 import { authService } from '../services/authService.js';
 import { isAssignedTillPrefix } from '../utils/receiptOrderNumber.js';
+import { tunnelService } from '../services/tunnelService.js';
 
 export const checkHealth = (req, res) => {
   const dbConnected = !!dbEngine.db;
@@ -29,7 +30,9 @@ export const checkHealth = (req, res) => {
     waiter_urls: waiterUrls,
     device_role: dbConnected ? configService.getSyncConfig().device_role : 'HUB',
     hub_ip: dbConnected ? configService.getSyncConfig().hub_ip : null,
-    hub_port: dbConnected ? configService.getSyncConfig().hub_port : null
+    hub_port: dbConnected ? configService.getSyncConfig().hub_port : null,
+    tunnel_url: tunnelService.url,
+    tunnel_status: tunnelService.status
   };
 
   if (!dbConnected) {

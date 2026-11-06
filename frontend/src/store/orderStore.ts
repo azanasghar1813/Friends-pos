@@ -212,11 +212,20 @@ export const mapHistoryDetailToOrder = (row: HistoryOrderRow, detail?: HistoryOr
     status: payment.status || 'Completed'
   })) as PaymentRecord[]
 
-  const timeline = (detail?.timeline || []).map((event: any) => ({
-    event: event.event_type || event.notes || 'Event',
-    timestamp: parseBackendDate(event.created_at),
-    cashier: formatName(event.user_id || event.actor_user_id),
-    remarks: event.description || event.notes || ''
+  const rawTimeline = (detail?.timeline && detail.timeline.length > 0)
+    ? detail.timeline
+    : (detail?.audit_trail || []).map((a: any) => ({
+        event_type: a.action,
+        created_at: a.created_at,
+        user_id: a.user_id,
+        description: a.reason || (typeof a.new_value === 'string' ? a.new_value : JSON.stringify(a.new_value || ''))
+      }));
+
+  const timeline = rawTimeline.map((event: any) => ({
+    event: event.event_type || event.event || event.notes || 'Event',
+    timestamp: parseBackendDate(event.created_at || event.timestamp),
+    cashier: formatName(event.user_id || event.actor_user_id || event.cashier),
+    remarks: event.description || event.remarks || event.notes || ''
   }))
 
   const auditLog = (detail?.audit_trail || []).map((entry: any) => ({
@@ -229,7 +238,18 @@ export const mapHistoryDetailToOrder = (row: HistoryOrderRow, detail?: HistoryOr
     reason: entry.reason || ''
   }))
 
-  const isNegativeEdit = Boolean(row.is_edited) && (detail?.timeline || []).some((e: any) => {
+  const isEdited = Boolean(row.is_edited)
+    || Boolean(detail?.is_edited)
+    || detail?.metadata?.is_edited === 'true'
+    || detail?.metadata?.is_edited === true
+    || (detail?.timeline || []).some((e: any) =>
+        ['ITEM_REMOVED', 'ITEM_QUANTITY_CHANGED', 'ITEM_ADDED', 'Order Edited', 'ORDER_EDITED', 'ORDER_UPDATED'].includes(e.event_type || e.event)
+       )
+    || (detail?.audit_trail || []).some((a: any) =>
+        ['QUANTITY_CHANGED', 'ITEM_REMOVED', 'ORDER_UPDATED', 'ORDER_EDITED'].includes(a.action)
+       );
+
+  const isNegativeEdit = isEdited && (detail?.timeline || []).some((e: any) => {
     if (e.event_type === 'ITEM_REMOVED') return true;
     if (e.event_type === 'ITEM_QUANTITY_CHANGED') {
       try {
@@ -286,8 +306,8 @@ export const mapHistoryDetailToOrder = (row: HistoryOrderRow, detail?: HistoryOr
     kitchenStatus: mapKitchenState(row.kitchen_state),
     paymentStatus: mapPaymentState(row.payment_state, row.receipt_paid_stamp ?? detail?.metadata?.receipt_paid_stamp),
     timestamp: parseBackendDate(row.created_at),
-    lastEdited: parseBackendDate(row.updated_at),
-    isEdited: Boolean(row.is_edited),
+    lastEdited: parseBackendDate(detail?.metadata?.last_edited_at || row.updated_at),
+    isEdited,
     isNegativeEdit,
     editedBy: undefined,
     isLocked: false,

@@ -4,10 +4,17 @@ import path from 'path';
 import config from '../config/index.js';
 import { checkHealth, claimDeviceId } from '../controllers/healthController.js';
 import { authenticate } from '../middleware/authenticate.js';
+import { tunnelService } from '../services/tunnelService.js';
 
 const router = Router();
 
 router.get('/', checkHealth);
+router.get('/tunnel', (req, res) => {
+  res.json({
+    success: true,
+    data: tunnelService.getStatus()
+  });
+});
 router.post('/device-id', authenticate, claimDeviceId);
 
 // Public route to download SSL Certificate for Android/iOS CA installation

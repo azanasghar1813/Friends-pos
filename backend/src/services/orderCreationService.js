@@ -26,6 +26,8 @@ import { customerRepository } from '../repositories/customerRepository.js';
 import crypto from 'crypto';
 import { dateUtils } from '../utils/dateUtils.js';
 import { orderTotalsService } from './orderTotalsService.js';
+import { socketService } from './socketService.js';
+import { printService } from './printService.js';
 
 /**
  * OrderCreationService
@@ -471,6 +473,26 @@ class OrderCreationService {
     const hydrated = this._hydrateOrder(result.orderId);
     if (!result.alreadyExisted) {
       lanPropagationService.propagate(result.orderId);
+      try {
+        socketService.emitOrderUpserted(hydrated);
+        if (socketService?.io) {
+          socketService.io.emit('waiter:order:created', {
+            orderId: hydrated.id,
+            orderNumber: hydrated.order_number,
+            tableNumber: hydrated.metadata?.table_number || hydrated.table_id || 'Table',
+            waiterName: hydrated.metadata?.waiter_name_snapshot || hydrated.metadata?.waiter_name || null,
+            grandTotal: hydrated.financial?.grand_total ?? hydrated.grand_total ?? 0,
+            itemCount: hydrated.items?.length || 0,
+            orderType: hydrated.order_type || 'DINE_IN'
+          });
+        }
+      } catch (sockErr) {
+        console.warn('[OrderCreation] Socket notification notice:', sockErr.message);
+      }
+
+      printService.printKitchenTickets(result.orderId, cashierUserId).catch(err => {
+        console.warn('[AutoKitchenPrint] KOT print notice:', err.message);
+      });
     }
     return hydrated;
   }

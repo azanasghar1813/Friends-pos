@@ -107,10 +107,10 @@ export function RiderSelectorModal({ isOpen, onClose }: RiderSelectorModalProps)
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-2xl bg-card rounded-3xl shadow-2xl border border-border overflow-hidden flex flex-col max-h-[85vh]"
+          className="relative w-[95vw] md:w-full max-w-2xl bg-card rounded-2xl sm:rounded-3xl shadow-2xl border border-border overflow-hidden flex flex-col max-h-[90vh] sm:max-h-[85vh]"
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-border bg-muted/30">
+          <div className="flex items-center justify-between p-3.5 sm:p-6 border-b border-border bg-muted/30">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-orange-500/20 text-orange-500 rounded-2xl flex items-center justify-center">
                 <User className="w-6 h-6" />
@@ -128,7 +128,7 @@ export function RiderSelectorModal({ isOpen, onClose }: RiderSelectorModalProps)
             </button>
           </div>
 
-          <div className="p-6 flex-1 overflow-y-auto">
+          <div className="p-3.5 sm:p-6 flex-1 overflow-y-auto">
             {/* Search */}
             <div className="relative mb-6">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -156,7 +156,7 @@ export function RiderSelectorModal({ isOpen, onClose }: RiderSelectorModalProps)
                 <p className="font-bold">No riders found.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3">
                 {filteredRiders.map((r, idx) => (
                   <button
                     key={r.id}

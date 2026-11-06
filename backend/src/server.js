@@ -10,6 +10,7 @@ import { printEngineService } from './services/printEngineService.js';
 import { printerDriverService } from './services/printerDriverService.js';
 import { socketService } from './services/socketService.js';
 import { getOrCreateSSLCredentials, getLocalIPs } from './utils/sslManager.js';
+import { tunnelService } from './services/tunnelService.js';
 process.on('uncaughtException', (err) => {
   console.error('[UNCAUGHT EXCEPTION]', err.name, err.message);
   if (err.stack) console.error(err.stack);
@@ -134,6 +135,7 @@ const startServer = async () => {
       const ssl = await getOrCreateSSLCredentials();
       if (ssl?.key && ssl?.cert) {
         httpsServer = https.createServer({ key: ssl.key, cert: ssl.cert }, app);
+        httpsServer.on("error", (err) => console.warn("⚠️ [SSL] HTTPS Server listener warning:", err.message));
         httpsServer.listen(httpsPort, config.server.host, () => {
           const lanIps = getLocalIPs().filter(ip => ip !== '127.0.0.1' && ip !== 'localhost');
           const primaryIp = lanIps[0] || '127.0.0.1';
@@ -144,6 +146,9 @@ const startServer = async () => {
     } catch (sslErr) {
       console.warn('⚠️ [SSL] Local HTTPS listener failed (continuing on HTTP):', sslErr.message);
     }
+
+    // Start Cloudflare Tunnel for seamless, instant mobile PWA install
+    tunnelService.start(config.server.port);
 
     process.on('unhandledRejection', (err) => {
       console.error('[UNHANDLED REJECTION - RECOVERED]', err?.name, err?.message);
@@ -162,6 +167,7 @@ const startServer = async () => {
       printerDriverService.shutdown();
       dbEngine.close();
 
+      tunnelService.stop();
       if (httpsServer) {
         try { httpsServer.close(); } catch (_) {}
       }

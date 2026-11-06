@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { 
-  Printer as PrinterIcon, Building2, Save, Trash2, Plus, Server, Edit2, X, RefreshCw, Shield, Download, ArrowDownCircle, CheckCircle, AlertCircle, Loader2
+  Printer as PrinterIcon, Building2, Save, Trash2, Plus, Server, Edit2, X, RefreshCw, Shield, Download, ArrowDownCircle, CheckCircle, AlertCircle, Loader2, Smartphone, QrCode, Globe, Wifi
 } from "lucide-react"
 import { useAuthStore, hasPermission } from "../store/authStore"
 import { configApi } from "../api/configApi"
 import { apiClient } from "../api/client"
 import { wipeOutHistory } from "../api/historyApi"
 import type { BusinessProfile, FinanceConfig, Printer, OrderConfig, SyncConfig } from "../api/configApi"
+import { MobileAccessModal } from "../components/MobileAccessModal"
 
 
 
@@ -27,6 +28,8 @@ export default function Settings() {
   const [downloadProgress, setDownloadProgress] = useState<any>(null)
   const [updateError, setUpdateError] = useState("")
   const [waiterUrls, setWaiterUrls] = useState<string[]>([])
+  const [tunnelUrl, setTunnelUrl] = useState<string | null>(null)
+  const [isMobileModalOpen, setIsMobileModalOpen] = useState(false)
 
   // Form Data
   const [orderConfig, setOrderConfig] = useState<OrderConfig>({
@@ -70,6 +73,7 @@ export default function Settings() {
       try {
         const health: any = await apiClient.get('/health')
         setWaiterUrls(health?.waiter_urls || health?.data?.waiter_urls || [])
+        setTunnelUrl(health?.tunnel_url || health?.data?.tunnel_url || null)
       } catch { /* ignore */ }
     } catch (e) {
       console.error("Failed to load config", e)
@@ -279,15 +283,43 @@ export default function Settings() {
           <p className="text-xs text-muted-foreground font-bold mt-1">
             Manage your business profile, service charges, and printer configurations.
           </p>
-          {waiterUrls.length > 0 && (
-            <div className="mt-3 p-3 rounded-xl bg-secondary/60 border border-border">
-              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">
-                Waiter tablet link
-              </p>
-              {waiterUrls.map((url) => (
-                <p key={url} className="text-sm font-black text-orange-500 break-all">{url}</p>
-              ))}
-              <p className="text-[10px] text-muted-foreground font-bold mt-1">Same Wi-Fi as this PC. Open this address in the tablet browser.</p>
+          {(waiterUrls.length > 0 || tunnelUrl) && (
+            <div className="mt-3 p-3.5 rounded-2xl bg-secondary/60 border border-border space-y-2.5">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-black uppercase tracking-widest text-emerald-500 flex items-center gap-1.5">
+                  <Smartphone className="w-3.5 h-3.5" />
+                  Waiter Mobile & Tablet Access
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setIsMobileModalOpen(true)}
+                  className="px-2.5 py-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold rounded-lg transition flex items-center gap-1 cursor-pointer"
+                >
+                  <QrCode className="w-3.5 h-3.5" />
+                  <span>Show QR Code</span>
+                </button>
+              </div>
+
+              {tunnelUrl && (
+                <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                  <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-0.5">
+                    🌐 Direct Install Cloudflare Link (Recommended):
+                  </p>
+                  <p className="text-xs font-black text-emerald-300 break-all font-mono">{tunnelUrl}</p>
+                </div>
+              )}
+
+              {waiterUrls.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">
+                    📶 Local Wi-Fi IP Links (Offline / LAN Fallback):
+                  </p>
+                  {waiterUrls.map((url) => (
+                    <p key={url} className="text-xs font-black text-orange-500 break-all font-mono">{url}</p>
+                  ))}
+                </div>
+              )}
+              <p className="text-[10px] text-muted-foreground font-bold">Same Wi-Fi as this PC. Open address in mobile browser to place orders.</p>
             </div>
           )}
         </div>
@@ -783,6 +815,10 @@ export default function Settings() {
         )}
       </AnimatePresence>
 
+      <MobileAccessModal
+        isOpen={isMobileModalOpen}
+        onClose={() => setIsMobileModalOpen(false)}
+      />
     </div>
   )
 }

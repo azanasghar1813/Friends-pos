@@ -51,6 +51,7 @@
     "asarUnpack": [
       "backend/**/*",
       "backend/.env",
+      "bin/**/*",
       "frontend/dist/**/*",
       "node_modules/**/*"
     ],
@@ -65,6 +66,7 @@
       "splash-logo.png",
       "backend/**/*",
       "backend/.env",
+      "bin/**/*",
       "!backend/.env.example",
       "!backend/**/*.db",
       "!backend/**/*.db-shm",

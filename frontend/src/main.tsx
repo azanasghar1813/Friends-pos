@@ -12,6 +12,7 @@ import { ProtectedRoute } from './components/ProtectedRoute.tsx'
 import { AppInitializer } from './components/AppInitializer.tsx'
 import { useUIStore } from './store/uiStore.ts'
 import { PWAInstallBanner } from './components/PWAInstallBanner.tsx'
+import { WaiterOrderToast } from './components/WaiterOrderToast.tsx'
 
 // Register PWA Service Worker for Mobile/Tablet App installability
 if ('serviceWorker' in navigator && (window.location.protocol.startsWith('http') || window.location.protocol.startsWith('https'))) {
@@ -101,5 +102,6 @@ createRoot(document.getElementById('root')!).render(
     <RouterProvider router={router} />
     <ToastProvider />
     <PWAInstallBanner />
+    <WaiterOrderToast />
   </StrictMode>,
 )

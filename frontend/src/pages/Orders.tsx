@@ -91,6 +91,19 @@ const parseAuditChange = (actionType: string, oldVal: any, newVal: any) => {
   return { tone: 'neutral' as const, sign: '', label: String(newVal || oldVal || '-'), amount: null, billBefore, billAfter }
 }
 
+const formatTimelineEvent = (raw: string) => {
+  if (!raw) return 'Order Event';
+  const clean = String(raw).trim();
+  if (clean === 'ITEM_QUANTITY_CHANGED') return 'Quantity Changed';
+  if (clean === 'ITEM_REMOVED') return 'Item Removed';
+  if (clean === 'ITEM_ADDED') return 'Item Added';
+  if (clean === 'ORDER_DRAFT_CREATED') return 'Order Created';
+  if (clean === 'ORDER_UPDATED' || clean === 'ORDER_EDITED') return 'Order Edited';
+  if (clean === 'PAYMENT_COMPLETED') return 'Payment Completed';
+  if (clean === 'RECEIPT_PRINTED') return 'Receipt Printed';
+  return clean;
+};
+
 export default function Orders() {
   const navigate = useNavigate()
   const { orders, lockOrder, unlockOrder, updateOrder, addTimelineEvent, addAuditLog, syncOrdersFromBackend } = useOrderStore()
@@ -1020,22 +1033,34 @@ export default function Orders() {
                 {/* 5. Timeline Tab */}
                 {activeTab === "timeline" && (
                   <div className="max-w-2xl mx-auto py-4">
-                    <div className="relative pl-6 space-y-6 before:absolute before:inset-0 before:ml-6 before:w-0.5 before:bg-border">
-                      {selectedOrder.timeline.map((event, idx) => (
-                        <div key={idx} className="relative">
-                          <div className="absolute -left-[30px] bg-card border-2 border-primary w-4 h-4 rounded-full mt-1.5 z-10" />
-                          <div className="bg-card border border-border rounded-2xl p-4 shadow-sm">
-                            <p className="font-black text-foreground">{event.event}</p>
-                            {event.remarks && <p className="text-sm text-muted-foreground font-bold mt-1">{event.remarks}</p>}
-                            <div className="flex items-center gap-2 mt-3 text-xs font-bold text-muted-foreground">
-                              <span>{new Date(event.timestamp).toLocaleTimeString()}</span>
-                              <span>•</span>
-                              <span>By {event.cashier}</span>
+                    {(!selectedOrder.timeline || selectedOrder.timeline.length === 0) ? (
+                      <div className="p-8 text-center bg-card rounded-2xl border border-border shadow-sm">
+                        <Clock className="w-10 h-10 text-muted-foreground/40 mx-auto mb-2" />
+                        <p className="font-bold text-muted-foreground">No timeline events recorded</p>
+                      </div>
+                    ) : (
+                      <div className="relative pl-6 space-y-6 before:absolute before:inset-0 before:ml-6 before:w-0.5 before:bg-border">
+                        {selectedOrder.timeline.map((event, idx) => (
+                          <div key={idx} className="relative">
+                            <div className="absolute -left-[30px] bg-card border-2 border-primary w-4 h-4 rounded-full mt-1.5 z-10 shadow-sm" />
+                            <div className="bg-card border border-border rounded-2xl p-4 shadow-sm hover:border-primary/40 transition-colors">
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="font-black text-foreground">{formatTimelineEvent(event.event)}</p>
+                                <span className="text-[11px] font-bold text-muted-foreground bg-secondary px-2.5 py-0.5 rounded-full border border-border/50">
+                                  {new Date(event.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                </span>
+                              </div>
+                              {event.remarks && <p className="text-sm text-muted-foreground font-semibold mt-1.5 leading-relaxed">{event.remarks}</p>}
+                              <div className="flex items-center gap-2 mt-3 text-xs font-bold text-muted-foreground">
+                                <span>{new Date(event.timestamp).toLocaleDateString()}</span>
+                                <span>•</span>
+                                <span>By {event.cashier}</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 

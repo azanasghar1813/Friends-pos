@@ -102,15 +102,20 @@ export function WaiterSelectorModal({ isOpen, onClose }: WaiterSelectorModalProp
           initial={{ scale: 0.95, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 20 }}
-          className="bg-background w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[70vh] border border-border"
+          className="bg-background w-[95vw] md:w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[88vh] sm:h-[70vh] border border-border"
         >
-          <div className="p-4 border-b border-border bg-card flex items-center justify-between shrink-0">
-            <div>
-              <h2 className="text-lg font-black text-foreground">Select Waiter</h2>
-              <p className="text-xs text-muted-foreground font-bold">Assign a waiter to this order</p>
+          <div className="p-3.5 sm:p-4 border-b border-border bg-card flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-base sm:text-lg font-black text-foreground">Select Waiter</h2>
+                <p className="text-[11px] sm:text-xs text-muted-foreground font-bold">Assign a waiter to this order</p>
+              </div>
+              <button onClick={onClose} className="sm:hidden p-2 hover:bg-secondary rounded-xl transition-colors">
+                <X className="w-5 h-5 text-muted-foreground" />
+              </button>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="relative w-64">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <div className="relative flex-1 sm:w-64">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
                   ref={searchInputRef}
@@ -121,7 +126,7 @@ export function WaiterSelectorModal({ isOpen, onClose }: WaiterSelectorModalProp
                   className="w-full h-10 pl-9 pr-4 rounded-xl bg-secondary border-none focus:ring-2 focus:ring-orange-500 outline-none text-sm font-semibold"
                 />
               </div>
-              <button onClick={onClose} className="p-2 hover:bg-secondary rounded-xl transition-colors">
+              <button onClick={onClose} className="hidden sm:flex p-2 hover:bg-secondary rounded-xl transition-colors">
                 <X className="w-5 h-5 text-muted-foreground" />
               </button>
             </div>
@@ -137,7 +142,7 @@ export function WaiterSelectorModal({ isOpen, onClose }: WaiterSelectorModalProp
                 <p className="font-bold">No waiters found.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                 {filteredWaiters.map((w, idx) => (
                   <button
                     key={w.id}

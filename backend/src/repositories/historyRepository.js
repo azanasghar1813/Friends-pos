@@ -111,12 +111,21 @@ class HistoryRepository {
         ) AS receipt_paid_stamp,
         o.service_charge AS service_charge,
         o.delivery_fee AS delivery_charges,
-        (SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END FROM activity_logs al
-          WHERE al.entity_id = o.id
-            AND (
-              al.action IN ('ITEM_REMOVED', 'QUANTITY_CHANGED')
-              OR (al.action = 'ITEM_ADDED' AND al.created_at > datetime(o.created_at, '+5 seconds'))
-            )
+        COALESCE(
+          (SELECT CASE WHEN LOWER(CAST(meta_value AS TEXT)) IN ('true', '1') THEN 1 ELSE 0 END
+           FROM order_metadata om WHERE om.order_id = o.id AND om.meta_key = 'is_edited' LIMIT 1),
+          (SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END FROM activity_logs al
+            WHERE al.entity_id = o.id
+              AND (
+                al.action IN ('ITEM_REMOVED', 'QUANTITY_CHANGED', 'ORDER_UPDATED', 'ORDER_EDITED')
+                OR (al.action = 'ITEM_ADDED' AND al.created_at > datetime(o.created_at, '+5 seconds'))
+              )
+          ),
+          (SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END FROM order_timeline ot
+            WHERE ot.order_id = o.id
+              AND ot.event_type IN ('ITEM_REMOVED', 'ITEM_QUANTITY_CHANGED', 'ITEM_ADDED', 'Order Edited', 'ORDER_EDITED', 'ORDER_UPDATED')
+          ),
+          0
         ) AS is_edited
       FROM orders o
       LEFT JOIN customers c ON c.id = o.customer_id
@@ -204,7 +213,23 @@ class HistoryRepository {
           r.username
         ) AS rider_name,
         o.service_charge AS service_charge,
-        o.delivery_fee AS delivery_charges
+        o.delivery_fee AS delivery_charges,
+        COALESCE(
+          (SELECT CASE WHEN LOWER(CAST(meta_value AS TEXT)) IN ('true', '1') THEN 1 ELSE 0 END
+           FROM order_metadata om WHERE om.order_id = o.id AND om.meta_key = 'is_edited' LIMIT 1),
+          (SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END FROM activity_logs al
+            WHERE al.entity_id = o.id
+              AND (
+                al.action IN ('ITEM_REMOVED', 'QUANTITY_CHANGED', 'ORDER_UPDATED', 'ORDER_EDITED')
+                OR (al.action = 'ITEM_ADDED' AND al.created_at > datetime(o.created_at, '+5 seconds'))
+              )
+          ),
+          (SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END FROM order_timeline ot
+            WHERE ot.order_id = o.id
+              AND ot.event_type IN ('ITEM_REMOVED', 'ITEM_QUANTITY_CHANGED', 'ITEM_ADDED', 'Order Edited', 'ORDER_EDITED', 'ORDER_UPDATED')
+          ),
+          0
+        ) AS is_edited
       FROM orders o 
       LEFT JOIN dining_tables dt ON dt.id = o.table_id
       LEFT JOIN users u ON u.id = o.cashier_user_id
@@ -311,6 +336,12 @@ class HistoryRepository {
     order.customer_phone = order.metadata.customer_phone || order.customer?.phone || order.customer_phone || null;
     order.customer_address = order.metadata.customer_address || order.customer?.address || order.customer_address || null;
     order.is_vip = order.metadata.is_vip === true || order.metadata.is_vip === 'true' || order.metadata.is_vip === 1 || order.customer?.is_vip === 1 || order.customer?.is_vip === true;
+    order.is_edited = Boolean(order.is_edited)
+      || order.metadata?.is_edited === 'true'
+      || order.metadata?.is_edited === true
+      || String(order.metadata?.is_edited) === '1'
+      || (order.timeline && order.timeline.some(t => ['ITEM_REMOVED', 'ITEM_QUANTITY_CHANGED', 'ITEM_ADDED', 'Order Edited', 'ORDER_EDITED', 'ORDER_UPDATED'].includes(t.event_type || t.event)))
+      || (order.audit_trail && order.audit_trail.some(a => ['QUANTITY_CHANGED', 'ITEM_REMOVED', 'ORDER_UPDATED', 'ORDER_EDITED'].includes(a.action)));
 
     // Audit trail (Combine order_audit_trail and activity_logs)
     const audits = dbEngine.prepare(`

@@ -62,6 +62,14 @@ export const initSocket = async () => {
       window.dispatchEvent(new CustomEvent('lcd-queue-updated', { detail: payload }));
     });
 
+    socket.on('waiter:order:created', (payload) => {
+      window.dispatchEvent(new CustomEvent('waiter-order-received', { detail: payload }));
+    });
+
+    socket.on('tunnel:status', (payload) => {
+      window.dispatchEvent(new CustomEvent('tunnel-status-changed', { detail: payload }));
+    });
+
     socket.on('order:deleted', (orderId: string) => {
       if (!orderId) return;
       console.log('[Socket] Order Deleted:', orderId);

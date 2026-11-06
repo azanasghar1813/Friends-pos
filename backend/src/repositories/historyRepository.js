@@ -117,13 +117,16 @@ class HistoryRepository {
           (SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END FROM activity_logs al
             WHERE al.entity_id = o.id
               AND (
-                al.action IN ('ITEM_REMOVED', 'QUANTITY_CHANGED', 'ORDER_UPDATED', 'ORDER_EDITED')
-                OR (al.action = 'ITEM_ADDED' AND al.created_at > datetime(o.created_at, '+5 seconds'))
+                al.action IN ('ITEM_REMOVED', 'QUANTITY_CHANGED')
+                OR (al.action IN ('ITEM_ADDED', 'ORDER_UPDATED', 'ORDER_EDITED') AND al.created_at > datetime(o.created_at, '+15 seconds'))
               )
           ),
           (SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END FROM order_timeline ot
             WHERE ot.order_id = o.id
-              AND ot.event_type IN ('ITEM_REMOVED', 'ITEM_QUANTITY_CHANGED', 'ITEM_ADDED', 'Order Edited', 'ORDER_EDITED', 'ORDER_UPDATED')
+              AND (
+                ot.event_type IN ('ITEM_REMOVED', 'ITEM_QUANTITY_CHANGED')
+                OR (ot.event_type IN ('ITEM_ADDED', 'Order Edited', 'ORDER_EDITED', 'ORDER_UPDATED') AND ot.created_at > datetime(o.created_at, '+15 seconds'))
+              )
           ),
           0
         ) AS is_edited
@@ -220,13 +223,16 @@ class HistoryRepository {
           (SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END FROM activity_logs al
             WHERE al.entity_id = o.id
               AND (
-                al.action IN ('ITEM_REMOVED', 'QUANTITY_CHANGED', 'ORDER_UPDATED', 'ORDER_EDITED')
-                OR (al.action = 'ITEM_ADDED' AND al.created_at > datetime(o.created_at, '+5 seconds'))
+                al.action IN ('ITEM_REMOVED', 'QUANTITY_CHANGED')
+                OR (al.action IN ('ITEM_ADDED', 'ORDER_UPDATED', 'ORDER_EDITED') AND al.created_at > datetime(o.created_at, '+15 seconds'))
               )
           ),
           (SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END FROM order_timeline ot
             WHERE ot.order_id = o.id
-              AND ot.event_type IN ('ITEM_REMOVED', 'ITEM_QUANTITY_CHANGED', 'ITEM_ADDED', 'Order Edited', 'ORDER_EDITED', 'ORDER_UPDATED')
+              AND (
+                ot.event_type IN ('ITEM_REMOVED', 'ITEM_QUANTITY_CHANGED')
+                OR (ot.event_type IN ('ITEM_ADDED', 'Order Edited', 'ORDER_EDITED', 'ORDER_UPDATED') AND ot.created_at > datetime(o.created_at, '+15 seconds'))
+              )
           ),
           0
         ) AS is_edited
@@ -340,8 +346,16 @@ class HistoryRepository {
       || order.metadata?.is_edited === 'true'
       || order.metadata?.is_edited === true
       || String(order.metadata?.is_edited) === '1'
-      || (order.timeline && order.timeline.some(t => ['ITEM_REMOVED', 'ITEM_QUANTITY_CHANGED', 'ITEM_ADDED', 'Order Edited', 'ORDER_EDITED', 'ORDER_UPDATED'].includes(t.event_type || t.event)))
-      || (order.audit_trail && order.audit_trail.some(a => ['QUANTITY_CHANGED', 'ITEM_REMOVED', 'ORDER_UPDATED', 'ORDER_EDITED'].includes(a.action)));
+      || (order.timeline && order.timeline.some(t => {
+          const type = t.event_type || t.event;
+          if (type === 'ITEM_REMOVED' || type === 'ITEM_QUANTITY_CHANGED') return true;
+          if (type === 'ITEM_ADDED' || type === 'Order Edited' || type === 'ORDER_EDITED') {
+            const tTime = new Date(t.created_at).getTime();
+            const oTime = new Date(order.created_at).getTime();
+            return (tTime - oTime) > 15000;
+          }
+          return false;
+        }));
 
     // Audit trail (Combine order_audit_trail and activity_logs)
     const audits = dbEngine.prepare(`

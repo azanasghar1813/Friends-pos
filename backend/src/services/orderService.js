@@ -157,7 +157,7 @@ class OrderService {
       }
     }
     order.is_vip = order.metadata?.is_vip === 'true' || order.metadata?.is_vip === true || String(order.metadata?.is_vip) === '1' || order.customer?.is_vip === 1 || order.customer?.is_vip === true;
-    order.is_edited = order.metadata?.is_edited === 'true' || order.metadata?.is_edited === true || String(order.metadata?.is_edited) === '1' || (order.timeline && order.timeline.some(t => ['ITEM_REMOVED', 'ITEM_QUANTITY_CHANGED', 'ITEM_ADDED', 'Order Edited', 'ORDER_EDITED', 'ORDER_UPDATED'].includes(t.event_type || t.event)));
+    order.is_edited = order.metadata?.is_edited === 'true' || order.metadata?.is_edited === true || String(order.metadata?.is_edited) === '1';
     order.last_edited = order.metadata?.last_edited_at || order.updated_at || order.created_at;
     for (const item of order.items || []) {
       const v = item.variant || (item.variants && item.variants[0]) || null;
@@ -232,8 +232,12 @@ class OrderService {
 
   _commitItemEdit(orderId) {
     try {
-      orderMetadataRepository.setMeta(orderId, 'is_edited', 'true');
-      orderMetadataRepository.setMeta(orderId, 'last_edited_at', new Date().toISOString());
+      const order = orderRepository.findById(orderId);
+      const orderAgeMs = order ? (Date.now() - new Date(order.created_at).getTime()) : 99999;
+      if (orderAgeMs > 5000) {
+        orderMetadataRepository.setMeta(orderId, 'is_edited', 'true');
+        orderMetadataRepository.setMeta(orderId, 'last_edited_at', new Date().toISOString());
+      }
     } catch (e) {
       console.error('Failed to set is_edited meta:', e);
     }
@@ -735,23 +739,29 @@ class OrderService {
         } catch { /* customer lookup is best-effort */ }
       }
 
-      try {
-        orderMetadataRepository.setMeta(orderId, 'is_edited', 'true');
-        orderMetadataRepository.setMeta(orderId, 'last_edited_at', new Date().toISOString());
-      } catch (e) { /* ignore */ }
+      const orderAgeMs = Date.now() - new Date(order.created_at).getTime();
+      const isInitialCheckout = isNaN(orderAgeMs) || orderAgeMs < 15000;
+
+      if (!isInitialCheckout) {
+        try {
+          orderMetadataRepository.setMeta(orderId, 'is_edited', 'true');
+          orderMetadataRepository.setMeta(orderId, 'last_edited_at', new Date().toISOString());
+        } catch (e) { /* ignore */ }
+      }
 
       if (Object.keys(updates).length > 0) {
         orderRepository.update(orderId, updates);
 
-        // Log activity
-        activityLogService.logActivity(userId, 'ORDER_UPDATED', 'ORDER', orderId, meta);
-        
-        orderTimelineService.recordEvent(orderId, userId, 'Order Edited', {
-          description: `Order metadata updated.`,
-          metadata: meta
-        });
+        if (!isInitialCheckout) {
+          activityLogService.logActivity(userId, 'ORDER_UPDATED', 'ORDER', orderId, meta);
+          
+          orderTimelineService.recordEvent(orderId, userId, 'Order Edited', {
+            description: `Order metadata updated.`,
+            metadata: meta
+          });
 
-        syncService.queueSyncEvent('ORDER', orderId, 'ORDER_UPDATED', meta);
+          syncService.queueSyncEvent('ORDER', orderId, 'ORDER_UPDATED', meta);
+        }
       }
 
       // Recalculate totals in case delivery charges or order type changed

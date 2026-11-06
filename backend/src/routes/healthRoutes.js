@@ -15,6 +15,16 @@ router.get('/tunnel', (req, res) => {
     data: tunnelService.getStatus()
   });
 });
+
+router.post('/tunnel/config', (req, res) => {
+  const { token, customDomain } = req.body || {};
+  tunnelService.saveConfig(token, customDomain);
+  res.json({
+    success: true,
+    message: 'Tunnel configuration updated and restarting.',
+    data: tunnelService.getStatus()
+  });
+});
 router.post('/device-id', authenticate, claimDeviceId);
 
 // Public route to download SSL Certificate for Android/iOS CA installation

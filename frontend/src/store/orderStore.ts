@@ -238,16 +238,41 @@ export const mapHistoryDetailToOrder = (row: HistoryOrderRow, detail?: HistoryOr
     reason: entry.reason || ''
   }))
 
+  const orderCreatedAt = row.created_at ? new Date(row.created_at).getTime() : 0;
+
+  const hasTimelineEdit = (detail?.timeline || []).some((e: any) => {
+    const eventName = e.event_type || e.event;
+    if (!['ITEM_REMOVED', 'ITEM_QUANTITY_CHANGED', 'ITEM_ADDED', 'Order Edited', 'ORDER_EDITED', 'ORDER_UPDATED'].includes(eventName)) {
+      return false;
+    }
+    if (e.created_at && orderCreatedAt > 0) {
+      const eventTime = new Date(e.created_at).getTime();
+      if (!isNaN(eventTime) && (eventTime - orderCreatedAt) < 15000) {
+        return false; // ignore initial creation-time events
+      }
+    }
+    return true;
+  });
+
+  const hasAuditEdit = (detail?.audit_trail || []).some((a: any) => {
+    if (!['QUANTITY_CHANGED', 'ITEM_REMOVED', 'ORDER_UPDATED', 'ORDER_EDITED'].includes(a.action)) {
+      return false;
+    }
+    if (a.created_at && orderCreatedAt > 0) {
+      const auditTime = new Date(a.created_at).getTime();
+      if (!isNaN(auditTime) && (auditTime - orderCreatedAt) < 15000) {
+        return false;
+      }
+    }
+    return true;
+  });
+
   const isEdited = Boolean(row.is_edited)
     || Boolean(detail?.is_edited)
     || detail?.metadata?.is_edited === 'true'
     || detail?.metadata?.is_edited === true
-    || (detail?.timeline || []).some((e: any) =>
-        ['ITEM_REMOVED', 'ITEM_QUANTITY_CHANGED', 'ITEM_ADDED', 'Order Edited', 'ORDER_EDITED', 'ORDER_UPDATED'].includes(e.event_type || e.event)
-       )
-    || (detail?.audit_trail || []).some((a: any) =>
-        ['QUANTITY_CHANGED', 'ITEM_REMOVED', 'ORDER_UPDATED', 'ORDER_EDITED'].includes(a.action)
-       );
+    || hasTimelineEdit
+    || hasAuditEdit;
 
   const isNegativeEdit = isEdited && (detail?.timeline || []).some((e: any) => {
     if (e.event_type === 'ITEM_REMOVED') return true;

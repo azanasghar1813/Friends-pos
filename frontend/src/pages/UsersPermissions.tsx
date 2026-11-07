@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Search, Plus, RefreshCw, X, Shield, Lock, Edit2, Key, CheckCircle, XCircle, Users, TableProperties, Settings2 } from "lucide-react"
 import { employeeService } from "../services/employeeService"
 import { useAuthStore, hasPermission } from "../store/authStore"
+import { toast } from "../store/toastStore"
 
 export default function UsersPermissions() {
   const { user: currentUser } = useAuthStore()
@@ -191,15 +192,16 @@ export default function UsersPermissions() {
   
   const handleToggleStatus = async (user: any) => {
     if (user.role_name === 'Super Admin' && user.is_active === 1) {
-       alert("Cannot disable a Super Admin account directly.")
+       toast.warning("Cannot disable a Super Admin account directly.")
        return
     }
     if (confirm(`Are you sure you want to ${user.is_active ? 'deactivate' : 'activate'} this user?`)) {
       try {
         await employeeService.updateStatus(user.id, !user.is_active)
+        toast.success(`User successfully ${!user.is_active ? 'activated' : 'deactivated'}`)
         fetchData()
       } catch (err: any) {
-        alert(err.response?.data?.error || "Failed to update status")
+        toast.error(err.response?.data?.error || "Failed to update status")
       }
     }
   }
@@ -208,7 +210,7 @@ export default function UsersPermissions() {
   
   const openRoleDrawer = (mode: "add" | "edit", role: any = null) => {
     if (role && (role.name === 'Super Admin' || role.name === 'Admin' || role.name === 'Owner')) {
-       alert("Core system roles cannot be modified directly.")
+       toast.warning("Core system roles cannot be modified directly.")
        return
     }
     setRoleDrawerMode(mode)
@@ -252,21 +254,22 @@ export default function UsersPermissions() {
 
   const handleDeleteRole = async (role: any) => {
     if (role.name === 'Super Admin' || role.name === 'Admin' || role.name === 'Owner') {
-       alert("Core system roles cannot be deleted.")
+       toast.warning("Core system roles cannot be deleted.")
        return
     }
     const roleInUse = users.some(u => u.role_id === role.id)
     if (roleInUse) {
-      alert("Cannot delete this role because there are users assigned to it.")
+      toast.warning("Cannot delete this role because there are users assigned to it.")
       return
     }
     
     if (confirm(`Are you sure you want to delete the role "${role.name}"?`)) {
       try {
         await employeeService.deleteRole(role.id)
+        toast.success("Role deleted successfully")
         fetchData()
       } catch (err: any) {
-        alert(err.response?.data?.error || "Failed to delete role")
+        toast.error(err.response?.data?.error || "Failed to delete role")
       }
     }
   }

@@ -108,13 +108,6 @@
       "include": "build/installer.nsh",
       "warningsAsErrors": false
     },
-    "asar": true,
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "azanasghar1813",
-        "repo": "dubaifood_software"
-      }
-    ]
+    "asar": true
   }
 }

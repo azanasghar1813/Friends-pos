@@ -12,6 +12,7 @@ import { useOrderStore } from "../store/orderStore"
 import type { Order } from "../store/orderStore"
 import { usePosStore } from "../store/posStore"
 import { useAuthStore } from "../store/authStore"
+import { toast } from "../store/toastStore"
 
 interface RecentOrdersModalProps {
   isOpen: boolean
@@ -158,7 +159,7 @@ export const RecentOrdersModal: React.FC<RecentOrdersModalProps> = ({ isOpen, on
       await loadOrderForEdit(order)
       onClose()
     } catch (e: any) {
-      alert(e?.message || 'Could not load this order for edit.')
+      toast.error(e?.message || 'Could not load this order for edit.')
     }
   }
 

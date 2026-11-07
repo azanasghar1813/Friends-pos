@@ -417,7 +417,7 @@ export default function Orders() {
   }
 
   const handleDuplicate = (order: Order) => {
-    alert(`Duplicating Order ${formatReceiptOrderNumber(order.orderNumber)} is scheduled for a future update.`)
+    toast.info(`Duplicating Order ${formatReceiptOrderNumber(order.orderNumber)} is scheduled for a future update.`)
   }
 
   const handleCancelOrder = async (order: Order) => {
@@ -438,7 +438,7 @@ export default function Orders() {
       await refetchHistory()
       if (selectedOrder?.id === order.id) setSelectedOrder(prev => prev ? { ...prev, status: "Cancelled", kitchenStatus: "Cancelled" } : null)
     } catch (e: any) {
-      alert(e?.response?.data?.message || e?.message || (isCancelled ? 'Could not recover this order.' : 'Could not cancel this order.'))
+      toast.error(e?.response?.data?.message || e?.message || (isCancelled ? 'Could not recover this order.' : 'Could not cancel this order.'))
     }
   }
 
@@ -514,14 +514,14 @@ export default function Orders() {
     const pin = deletePin.trim()
     const pinOk = await authService.verifyManagerPin(pin)
     if (!pinOk) {
-      alert('Unauthorized. Enter a manager PIN.')
+      toast.error('Unauthorized', 'Enter a valid manager PIN.')
       return
     }
     try {
       if (deleteDialog.mode === 'one' && deleteDialog.order) {
         const res: any = await deleteOrder(deleteDialog.order.id, pin)
         if (res?.success === false) {
-          alert(res.message || 'Failed to delete order')
+          toast.error('Failed to delete order', res.message || 'Unknown error')
           return
         }
         if (selectedOrder?.id === deleteDialog.order.id) setSelectedOrder(null)
@@ -537,7 +537,7 @@ export default function Orders() {
     } catch (e: any) {
       console.error(e)
       const msg = e?.response?.data?.message || e?.message || 'Error deleting order.'
-      alert(msg === 'Network Error' ? 'Could not reach the till API to delete this order. Check the backend is running, then try again.' : msg)
+      toast.error('Delete Order Failed', msg === 'Network Error' ? 'Could not reach the till API to delete this order. Check the backend is running, then try again.' : msg)
     }
   }
 

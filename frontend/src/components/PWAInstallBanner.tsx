@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Download, X, Share, MoreVertical, Smartphone } from 'lucide-react';
+import { toast } from '../store/toastStore';
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -79,7 +80,7 @@ export const PWAInstallBanner: React.FC = () => {
       }
     } else {
       // If prompt not available yet, guide the user
-      alert("To install Friend's POS:\n1. Tap the 3 dots menu (⋮) in Chrome top right.\n2. Tap 'Add to Home screen' or 'Install App'.");
+      toast.info("To install Friend's POS: Tap Chrome menu (⋮) -> 'Add to Home screen' or 'Install App'.");
     }
   };
 

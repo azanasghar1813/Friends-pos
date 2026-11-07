@@ -2,6 +2,7 @@ import React, { useEffect } from 'react'
 import { Printer, RefreshCw, XCircle, CheckCircle2, AlertCircle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { usePrinterStore } from '../store/printerStore'
+import { toast } from '../store/toastStore'
 
 interface PrinterManagerProps {
   isOpen: boolean
@@ -99,8 +100,9 @@ export const PrinterManager: React.FC<PrinterManagerProps> = ({ isOpen, onClose 
                     try {
                       await clearQueue()
                       fetchQueue()
+                      toast.success('Print queue cleared successfully')
                     } catch {
-                      alert('Could not clear the print queue.')
+                      toast.error('Could not clear the print queue.')
                     }
                   }}
                   className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500 text-red-600 hover:text-white text-[10px] uppercase font-black rounded-lg border border-red-500/20 transition-colors"

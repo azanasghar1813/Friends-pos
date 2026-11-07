@@ -12,12 +12,30 @@ const { autoUpdater, CancellationToken } = pkg;
 app.setName("Friend's POS");
 app.setAppUserModelId('com.friendspos.app');
 
+// Single-instance lock: prevents double-clicking from opening duplicate instances
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+  process.exit(0);
+}
+
+app.on('second-instance', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  }
+});
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const userDataPath = app.getPath('userData');
 const prodStorageRoot = path.join(userDataPath, 'storage');
-process.env.STORAGE_ROOT = prodStorageRoot;
+if (app.isPackaged) {
+  process.env.STORAGE_ROOT = prodStorageRoot;
+} else {
+  process.env.STORAGE_ROOT = path.join(__dirname, 'backend', 'storage');
+}
 
 const copyDirContents = (src, dest) => {
   fs.mkdirSync(dest, { recursive: true });
@@ -244,6 +262,8 @@ const startBackendProcess = async () => {
   backendEnv.PORT = BACKEND_PORT;
   if (app.isPackaged) {
     backendEnv.STORAGE_ROOT = path.join(app.getPath('userData'), 'storage');
+  } else {
+    backendEnv.STORAGE_ROOT = path.join(__dirname, 'backend', 'storage');
   }
   if (isProdMode) {
     backendEnv.NODE_ENV = 'production';
@@ -946,9 +966,10 @@ app.whenReady().then(async () => {
     return app.getVersion();
   });
 
-  if (app.isPackaged) {
-    autoUpdater.checkForUpdates().catch(err => console.error("Silent update check failed:", err));
-  }
+  // Auto-updater is disabled until dedicated Friend's POS repository is configured
+  // if (app.isPackaged) {
+  //   autoUpdater.checkForUpdates().catch(err => console.error("Silent update check failed:", err));
+  // }
 });
 
 // Ensures the backend is stopped cleanly (checkpointing SQLite) before

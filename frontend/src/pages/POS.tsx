@@ -25,6 +25,7 @@ import { authService } from "../services/authService"
 import { apiClient } from "../api/client"
 import { splitBilingualName } from "../utils/bilingual"
 import { newId } from "../utils/uuid"
+import { toast } from "../store/toastStore"
 import { CustomerPanelModal } from "../components/CustomerPanelModal"
 import { TableSelectorModal } from "../components/TableSelectorModal"
 import { WaiterSelectorModal } from "../components/WaiterSelectorModal"
@@ -229,19 +230,19 @@ export default function POS() {
   const handleSendKot = async () => {
     if (isProcessing) return;
     if (usePosStore.getState().cart.length === 0) {
-      alert("This order is currently empty. Please add items before placing it.");
+      toast.warning("This order is currently empty. Please add items before placing it.");
       return;
     }
     try {
       const { usePrinterStore } = await import("../store/printerStore")
       const placed = await placeCartOrder()
       if (!placed.ok) {
-        alert("KOT could not be sent. Checkout failed.")
+        toast.error("KOT could not be sent. Checkout failed.")
         return
       }
       const { currentOrderId, wasEditing, latest } = placed
       if (!currentOrderId) {
-        alert("KOT could not be sent. Checkout failed.")
+        toast.error("KOT could not be sent. Checkout failed.")
         return
       }
       const preview = {
@@ -279,7 +280,7 @@ export default function POS() {
       if (hasThermal) {
         kot = await ps.printKitchen(currentOrderId, user?.id || user?.name || 'cashier')
         if (!kot) {
-          alert("KOT could not be sent to the kitchen printer. Check USB or LAN.")
+          toast.error("KOT could not be sent to the kitchen printer. Check USB or LAN.")
         }
       }
 
@@ -291,24 +292,24 @@ export default function POS() {
         await resetAfterPlace()
       }
     } catch {
-      alert("KOT could not be sent. Check kitchen printer (USB or LAN).")
+      toast.error("KOT could not be sent. Check kitchen printer (USB or LAN).")
     }
   }
 
   const handlePrintReceiptFromCart = async () => {
     if (usePosStore.getState().cart.length === 0) {
-      alert("This order is currently empty. Please add items before placing it.");
+      toast.warning("This order is currently empty. Please add items before placing it.");
       return;
     }
     try {
       const placed = await placeCartOrder()
       if (!placed.ok) {
-        alert("Order could not be placed. Receipt was not printed.")
+        toast.error("Order could not be placed. Receipt was not printed.")
         return
       }
       const { currentOrderId, wasEditing, latest } = placed
       if (!currentOrderId) {
-        alert("Order could not be placed. Receipt was not printed.")
+        toast.error("Order could not be placed. Receipt was not printed.")
         return
       }
       const liveCart = latest.cart || cart
@@ -395,7 +396,7 @@ export default function POS() {
       // WebSockets will handle order hydration automatically
       if (!wasEditing) await resetAfterPlace()
     } catch {
-      alert("Order could not be placed. Check the cart and try again.")
+      toast.error("Order could not be placed. Check the cart and try again.")
     }
   }
 
@@ -476,7 +477,7 @@ export default function POS() {
       generatedOrderId = result.orderId;
     } catch (err: any) {
       console.error("Order failed:", err);
-      alert(err?.response?.data?.error || err?.message || "Order could not be placed. Check the cart and try again.");
+      toast.error(err?.response?.data?.error || err?.message || "Order could not be placed. Check the cart and try again.");
       setIsProcessing(false);
       return;
     }
@@ -1013,7 +1014,7 @@ export default function POS() {
         e.preventDefault()
         if (confirm("Cancel editing and discard changes?")) {
           if (usePosStore.getState().cart.length === 0) {
-            alert("This order is completely empty. Canceling edit will leave the order empty.");
+            toast.warning("This order is completely empty. Canceling edit will leave the order empty.");
           }
           clearEditMode()
         }
@@ -2091,7 +2092,7 @@ export default function POS() {
               </div>
               <button onClick={() => {
                 if (usePosStore.getState().cart.length === 0) {
-                  alert("This order is completely empty. Canceling edit will leave the order empty.");
+                  toast.warning("This order is completely empty. Canceling edit will leave the order empty.");
                 }
                 clearEditMode();
               }} className="text-[10px] font-bold bg-orange-500/20 text-orange-600 px-2 py-1 rounded hover:bg-orange-500 hover:text-white transition-colors">
@@ -2850,7 +2851,7 @@ export default function POS() {
 
                       if (!success) {
                         setIsProcessing(false)
-                        alert("Could not complete this order. The cart is still here — please try again.")
+                        toast.error("Could not complete this order. The cart is still here — please try again.")
                         return
                       }
 
@@ -2876,7 +2877,7 @@ export default function POS() {
                             await ps.printKitchen(finalOrderId, user?.id || user?.name || 'cashier')
                           }
                           if (thermalPrintQueued) {
-                            alert(isKdsAutoSend
+                            toast.success(isKdsAutoSend
                               ? "Order completed. Customer receipt printed, then kitchen ticket."
                               : "Order completed. Customer receipt printed.")
                           }

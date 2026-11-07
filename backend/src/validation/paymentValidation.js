@@ -21,7 +21,7 @@ export const processCashPaymentSchema = z.object({
 // Process Non-Cash Payment (Card, JazzCash, EasyPaisa, Bank Transfer, Other)
 // ─────────────────────────────────────────────────────────────────────────────
 export const processNonCashPaymentSchema = z.object({
-  payment_method:        PAYMENT_METHOD_CODES.exclude(['CASH'] as const),
+  payment_method:        z.enum(['CARD', 'JAZZCASH', 'EASYPAISA', 'BANK_TRANSFER', 'OTHER']),
   amount:                z.number().positive('Payment amount must be greater than zero'),
   transaction_reference: z.string().min(1).max(200).optional().nullable(),
   approval_code:         z.string().max(100).optional().nullable(),

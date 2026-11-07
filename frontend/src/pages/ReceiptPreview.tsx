@@ -4,6 +4,7 @@ import type { Order } from "../store/orderStore"
 import { useSettingsStore } from "../store/settingsStore"
 import { formatReceiptOrderNumber } from "../utils/receiptOrderNumber"
 import { splitBilingualName } from "../utils/bilingual"
+import { toast } from "../store/toastStore"
 
 interface ReceiptPreviewProps {
   order?: Order
@@ -199,7 +200,7 @@ export default function ReceiptPreview({ order, autoPrint, onClose }: ReceiptPre
       const left = Math.round(window.screenX + (window.outerWidth - popupWidth) / 2);
       const top = Math.round(window.screenY + (window.outerHeight - popupHeight) / 2);
       const pw = window.open('', '_blank', `width=${popupWidth},height=${popupHeight},left=${left},top=${top}`)
-      if (!pw) { alert('Please allow popups to print receipts.'); return }
+      if (!pw) { toast.warning('Please allow popups to print receipts.'); return }
       pw.document.write(html)
       pw.document.close()
 

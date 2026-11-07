@@ -14,6 +14,7 @@ import { fetchDetailedSales, fetchReportSummary, fetchRecentItems, type Detailed
 import { apiClient } from "../api/client"
 import { DateUtils } from "../utils/dateUtils"
 import { splitBilingualName } from "../utils/bilingual"
+import { toast } from "../store/toastStore"
 
 export const mapCategory = (cat: string | null | undefined) => {
   const lower = (cat || '').toLowerCase().trim()
@@ -259,7 +260,7 @@ export default function Reports() {
     }
 
     if (!csvContent) {
-      alert('No data to export for this report tab.')
+      toast.warning('No data to export for this report tab.')
       return
     }
 

@@ -207,27 +207,50 @@ export const invalidateOrder = (req, res) => {
   }
 };
 
-const WIPE_ROLES = ['Owner', 'Super Admin', 'Super Administrator', 'super_admin', 'Admin', 'admin'];
+const ADMIN_ROLES = ['Owner', 'Super Admin', 'Super Administrator', 'super_admin', 'Admin', 'admin'];
 
 export const wipeOutHistory = (req, res) => {
   try {
     const pin = String(req.body?.pin || '').trim();
-    if (!pin) return res.status(400).json({ success: false, message: 'PIN is required.' });
+    const userId = req.user?.userId;
+    const user = userId ? userRepository.findById(userId) : null;
 
-    const userId = req.user.userId;
-    const user = userRepository.findById(userId);
+    const isAdmin = (user && ADMIN_ROLES.includes(user.role_name)) || 
+                    (user && user.username === 'admin') ||
+                    (req.user?.permissions && req.user.permissions.includes('*'));
 
-    if (!user || !WIPE_ROLES.includes(user.role_name)) {
-      return res.status(403).json({ success: false, message: 'Only the Owner, Admin or Super Admin can wipe out history.' });
+    if (isAdmin) {
+      // Logged in as Admin: No PIN required!
+      orderHistoryService.wipeOutHistory();
+      return res.json({ 
+        success: true, 
+        message: 'All order history and activity logs cleared successfully. Database optimized.' 
+      });
     }
 
-    if (!authService.verifyManagerPin(pin)) {
-      return res.status(401).json({ success: false, message: 'Invalid PIN.' });
+    // Non-admin user: Admin PIN is strictly required
+    if (!pin) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Admin authorization required. Please provide a valid Admin PIN.' 
+      });
     }
 
+    if (!authService.verifyAdminPin(pin)) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Invalid Admin PIN. History clear cancelled.' 
+      });
+    }
+
+    // Authorized via Admin PIN
     orderHistoryService.wipeOutHistory();
-    res.json({ success: true, message: 'All order history wiped out successfully.' });
+    return res.json({ 
+      success: true, 
+      message: 'All order history and activity logs cleared successfully with Admin authorization. Database optimized.' 
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Wipe out history error:', error);
+    res.status(500).json({ success: false, message: error.message || 'Failed to clear order history.' });
   }
 };

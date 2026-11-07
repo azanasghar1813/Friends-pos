@@ -128,6 +128,15 @@ const startServer = async () => {
       printStartupSummary(storageResults, dbInfo, startupTimeMs);
     });
 
+    server.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        console.error('\n❌ [PORT IN USE] Port ' + config.server.port + ' is already being used by another process!');
+        console.error('   Agar Friend\'s POS ka installed exe background me open hai, to pehle usay close karein taake dev server is port ko bind kar sakay.\n');
+      } else {
+        console.error('❌ Server listener error:', err.message);
+      }
+    });
+
     socketService.attach(server);
 
     const httpsPort = process.env.HTTPS_PORT ? parseInt(process.env.HTTPS_PORT, 10) : 5443;

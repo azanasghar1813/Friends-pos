@@ -245,8 +245,10 @@ export async function deleteOrder(orderId: string, pin?: string): Promise<{ succ
 }
 
 /**
- * Wipe out entire order history. Requires PIN.
+ * Wipe out entire order history and activity logs.
+ * If user is Admin, PIN is not required.
+ * If user is non-Admin, Admin PIN is required.
  */
-export async function wipeOutHistory(pin: string): Promise<{ success: boolean; message?: string }> {
-  return apiClient.post('/history/wipe-out', { pin });
+export async function wipeOutHistory(pin?: string): Promise<{ success: boolean; message?: string }> {
+  return apiClient.post('/history/wipe-out', pin ? { pin } : {});
 }

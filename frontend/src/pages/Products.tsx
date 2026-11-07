@@ -612,7 +612,7 @@ export default function Products() {
           </button>
 
           <button
-            onClick={() => alert("Product Catalog Exported successfully.")}
+            onClick={() => toast.success("Product Catalog Exported successfully.")}
             className="flex items-center gap-1.5 px-3 py-2 bg-secondary border border-border rounded-xl text-xs font-black text-foreground hover:bg-secondary/80 transition-colors"
           >
             <Download className="w-4 h-4" /> Export Excel

@@ -2,6 +2,7 @@ import { useEffect } from "react"
 import { Printer, X } from "lucide-react"
 import { formatReceiptOrderNumber } from "../utils/receiptOrderNumber"
 import { useSettingsStore } from "../store/settingsStore"
+import { toast } from "../store/toastStore"
 
 export interface KitchenTicketPreviewOrder {
   orderNumber?: string
@@ -142,7 +143,7 @@ export default function KitchenTicketPreview({ order, autoPrint, onClose }: Kitc
     const left = Math.round(window.screenX + (window.outerWidth - popupWidth) / 2);
     const top = Math.round(window.screenY + (window.outerHeight - popupHeight) / 2);
     const pw = window.open('', '_blank', `width=${popupWidth},height=${popupHeight},left=${left},top=${top}`)
-    if (!pw) { alert('Please allow popups to print receipts.'); return }
+    if (!pw) { toast.warning('Please allow popups to print receipts.'); return }
     pw.document.write(html)
     pw.document.close()
     

@@ -7,6 +7,7 @@ import {
   X, Power, Award, List, Loader2
 } from "lucide-react"
 import { employeeService } from "../services/employeeService"
+import { toast } from "../store/toastStore"
 
 export default function Employees() {
   const [employees, setEmployees] = useState<any[]>([])
@@ -223,10 +224,10 @@ export default function Employees() {
       
       await fetchEmployees();
       setDrawerMode("view")
-      alert("Employee saved successfully!");
+      toast.success("Employee saved successfully!");
     } catch (error: any) {
       console.error("Error saving employee:", error);
-      alert("Error saving employee: " + (error.response?.data?.error || error.message));
+      toast.error("Error saving employee: " + (error.response?.data?.error || error.message));
     }
   }
 
@@ -304,7 +305,7 @@ export default function Employees() {
           </button>
           
           <button 
-            onClick={() => alert("Staff attendance sheet exported.")}
+            onClick={() => toast.success("Staff attendance sheet exported.")}
             className="flex items-center gap-1.5 px-3 py-2 bg-secondary border border-border rounded-xl text-xs font-black text-foreground hover:bg-secondary/80 transition-colors"
           >
             <Download className="w-4 h-4" /> Export CSV
@@ -882,7 +883,7 @@ export default function Employees() {
                           const isOnDuty = !selectedEmp.isOnDuty
                           setSelectedEmp({ ...selectedEmp, isOnDuty })
                           setEmployees(employees.map(e => e.id === selectedEmp.id ? { ...e, isOnDuty } : e))
-                          alert(`Employee status changed to: ${isOnDuty ? 'Clocked In (On Duty)' : 'Clocked Out (Off Duty)'}`)
+                          toast.success(`Employee status changed to: ${isOnDuty ? 'Clocked In (On Duty)' : 'Clocked Out (Off Duty)'}`)
                         }}
                         className="col-span-2 py-3 bg-secondary hover:bg-border border border-border text-foreground font-black text-xs uppercase rounded-xl flex items-center justify-center gap-1.5 transition-colors"
                       >

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { 
-  Printer as PrinterIcon, Building2, Save, Trash2, Plus, Server, Edit2, X, RefreshCw, Shield, Download, ArrowDownCircle, CheckCircle, AlertCircle, Loader2, Smartphone, QrCode, Globe, Wifi
+  Printer as PrinterIcon, Building2, Save, Trash2, Plus, Server, Edit2, X, RefreshCw, Shield, Download, ArrowDownCircle, CheckCircle, AlertCircle, Loader2, Smartphone, QrCode, Globe, Wifi, ShieldCheck, Key, AlertTriangle, CheckCircle2
 } from "lucide-react"
 import { useAuthStore, hasPermission } from "../store/authStore"
 import { configApi } from "../api/configApi"
@@ -9,12 +9,26 @@ import { apiClient } from "../api/client"
 import { wipeOutHistory } from "../api/historyApi"
 import type { BusinessProfile, FinanceConfig, Printer, OrderConfig, SyncConfig } from "../api/configApi"
 import { MobileAccessModal } from "../components/MobileAccessModal"
+import { toast } from "../store/toastStore"
 
 
 
 export default function Settings() {
   const { user: currentUser } = useAuthStore()
   const [activeTab, setActiveTab] = useState("Printers")
+  
+  // Clear History Modal States
+  const [isClearHistoryModalOpen, setIsClearHistoryModalOpen] = useState(false)
+  const [clearHistoryPin, setClearHistoryPin] = useState("")
+  const [isClearingHistory, setIsClearingHistory] = useState(false)
+  const [clearHistoryError, setClearHistoryError] = useState("")
+
+  const isAdmin = currentUser?.role === 'Admin' || 
+                  currentUser?.role === 'Super Admin' || 
+                  currentUser?.role === 'Owner' || 
+                  currentUser?.role === 'Super Administrator' || 
+                  currentUser?.username === 'admin' ||
+                  Boolean(currentUser?.permissions?.includes('*'))
   
   // States
   const [isLoading, setIsLoading] = useState(true)
@@ -166,10 +180,11 @@ export default function Settings() {
 
       }
       setIsSaved(true)
+      toast.success("Settings saved successfully")
       setTimeout(() => setIsSaved(false), 2000)
     } catch (e) {
       console.error("Failed to save", e)
-      alert("Failed to save settings")
+      toast.error("Failed to save settings")
     } finally {
       setIsSaving(false)
     }
@@ -181,14 +196,16 @@ export default function Settings() {
     try {
       if (editingPrinter) {
         await configApi.updatePrinter(editingPrinter.id, printerFormData)
+        toast.success("Printer updated successfully")
       } else {
         await configApi.createPrinter(printerFormData)
+        toast.success("Printer added successfully")
       }
       setIsPrinterDrawerOpen(false)
       fetchConfig() // Reload printers
     } catch (e) {
       console.error("Failed to save printer", e)
-      alert("Failed to save printer")
+      toast.error("Failed to save printer")
     } finally {
       setIsSaving(false)
     }
@@ -198,10 +215,11 @@ export default function Settings() {
     if (!confirm("Are you sure you want to delete this printer?")) return
     try {
       await configApi.deletePrinter(id)
+      toast.success("Printer deleted successfully")
       fetchConfig()
     } catch (e) {
       console.error("Failed to delete printer", e)
-      alert("Failed to delete printer")
+      toast.error("Failed to delete printer")
     }
   }
 
@@ -241,6 +259,34 @@ export default function Settings() {
       const res = await configApi.discoverPrinters()
       setDiscoveredPrinters(res.data?.data || [])
     } catch (e) { console.error(e) }
+  }
+
+  const handleOpenClearHistory = () => {
+    setClearHistoryPin("")
+    setClearHistoryError("")
+    setIsClearHistoryModalOpen(true)
+  }
+
+  const handleExecuteClearHistory = async () => {
+    if (!isAdmin && (!clearHistoryPin || clearHistoryPin.trim().length < 4)) {
+      setClearHistoryError("Please enter a valid 4+ digit Admin PIN.")
+      return
+    }
+
+    try {
+      setIsClearingHistory(true)
+      setClearHistoryError("")
+      const res = await wipeOutHistory(isAdmin ? undefined : clearHistoryPin.trim())
+      toast.success(res.message || "Order history and activity logs cleared successfully! Database optimized.")
+      setIsClearHistoryModalOpen(false)
+      setClearHistoryPin("")
+    } catch (e: any) {
+      const errMsg = e.response?.data?.message || e.message || "Failed to clear order history."
+      setClearHistoryError(errMsg)
+      toast.error(errMsg)
+    } finally {
+      setIsClearingHistory(false)
+    }
   }
 
   const tabsList = [
@@ -397,43 +443,55 @@ export default function Settings() {
                       </div>
                     </div>
 
-                    <div className="bg-red-500/10 p-6 rounded-2xl border border-red-500/20 space-y-4">
-                      <div>
-                        <h3 className="text-base font-black text-red-500 flex items-center gap-2"><Trash2 className="w-5 h-5"/> Wipe Out History</h3>
-                        <p className="text-sm text-red-500/80 mt-1">Permanently delete all order history and related data. This action is irreversible.</p>
+                    {/* Clear Order History Card */}
+                    <div className="bg-card p-6 rounded-2xl border border-red-500/25 shadow-sm space-y-5">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-9 h-9 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 border border-red-500/20">
+                              <Trash2 className="w-5 h-5" />
+                            </div>
+                            <h3 className="text-lg font-black text-foreground">Clear Order History & Optimize System</h3>
+                          </div>
+                          <p className="text-sm text-muted-foreground pl-11">
+                            Purge all orders, order items, receipts, kitchen tickets, and activity logs. Reclaims disk space and optimizes SQLite so the system runs ultra-fast and lag-free for the next business day.
+                          </p>
+                        </div>
+
+                        <div>
+                          {isAdmin ? (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                              <ShieldCheck className="w-3.5 h-3.5" />
+                              Admin Account (No PIN Needed)
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                              <Key className="w-3.5 h-3.5" />
+                              Admin PIN Required
+                            </span>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                        <input 
-                          type="password"
-                          id="wipePin"
-                          placeholder="Enter Owner PIN to authorize"
-                          className="w-full sm:w-64 h-11 px-4 bg-background border border-red-500/20 rounded-xl text-sm font-bold focus:outline-none focus:border-red-500 transition-colors placeholder:text-red-500/40"
-                        />
+                      <div className="bg-secondary/40 rounded-xl p-4 border border-border/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="text-xs text-muted-foreground space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                            <span className="font-bold text-foreground">Clears:</span> Orders, Items, Timeline, Payments, Receipts, Activity Logs.
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                            <span className="font-bold text-foreground">Preserves:</span> Products, Categories, Deals, Users, Printers, Settings (Catalog Safe).
+                          </div>
+                        </div>
+
                         <button
                           type="button"
-                          onClick={async () => {
-                            const pinInput = document.getElementById('wipePin') as HTMLInputElement
-                            const pin = pinInput.value
-                            if (!pin) {
-                              alert("Please enter the Owner PIN.")
-                              return
-                            }
-                            if (!confirm("Are you ABSOLUTELY SURE you want to wipe out all order history? This cannot be undone.")) return
-                            try {
-                              setIsSaving(true)
-                              const res = await wipeOutHistory(pin)
-                              alert(res.message || "History wiped out successfully.")
-                              pinInput.value = ""
-                            } catch (e: any) {
-                              alert(e.response?.data?.message || "Failed to wipe history.")
-                            } finally {
-                              setIsSaving(false)
-                            }
-                          }}
-                          className="w-full sm:w-auto h-11 px-6 bg-red-500 text-white font-black rounded-xl hover:bg-red-600 transition-all shadow-md shadow-red-500/20"
+                          onClick={handleOpenClearHistory}
+                          className="px-6 py-3 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-black rounded-xl text-sm transition-all shadow-md shadow-red-600/20 flex items-center justify-center gap-2 shrink-0 cursor-pointer"
                         >
-                          Wipe Out History
+                          <Trash2 className="w-4 h-4" />
+                          Clear Order History
                         </button>
                       </div>
                     </div>
@@ -812,6 +870,164 @@ export default function Settings() {
               </div>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      {/* CLEAR ORDER HISTORY CONFIRMATION / ADMIN PIN MODAL */}
+      <AnimatePresence>
+        {isClearHistoryModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              transition={{ duration: 0.2 }}
+              className="bg-card w-full max-w-lg rounded-2xl border border-border shadow-2xl overflow-hidden flex flex-col text-foreground"
+            >
+              {/* Modal Header */}
+              <div className="p-6 border-b border-border bg-red-500/5 flex items-start justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-red-500/15 border border-red-500/25 flex items-center justify-center text-red-500 shrink-0">
+                    <AlertTriangle className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-foreground">
+                      Clear Order History?
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      System optimization & data purge
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => !isClearingHistory && setIsClearHistoryModalOpen(false)}
+                  disabled={isClearingHistory}
+                  className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-6 space-y-5 text-sm">
+                <div className="p-3.5 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 dark:text-red-400 font-bold text-xs flex items-start gap-2.5">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>
+                    <strong>Khabardaar:</strong> Yeh action tamam orders aur activity logs ko database se hamesha ke liye delete kar dega taake kal software bilkul naya aur tez chale. Yeh wapis nahi laya ja sakta!
+                  </span>
+                </div>
+
+                {/* Details List */}
+                <div className="space-y-2 text-xs">
+                  <p className="font-black text-foreground uppercase tracking-wider">Kya kya clear hoga:</p>
+                  <ul className="space-y-1.5 text-muted-foreground pl-1">
+                    <li className="flex items-center gap-2">
+                      <span className="text-red-500 font-black">✕</span>
+                      <span>Tamam <strong>Orders & Order Items</strong> (Completed, Pending, Cancelled)</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-red-500 font-black">✕</span>
+                      <span>Tamam <strong>Payments, Receipts & Shifts transactions</strong></span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-red-500 font-black">✕</span>
+                      <span>Tamam <strong>Kitchen Tickets & Status Timelines</strong></span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-red-500 font-black">✕</span>
+                      <span>Tamam <strong>Activity Logs & Audit Trails</strong></span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-emerald-500 font-black">✓</span>
+                      <span>Dining Tables automatically <strong>AVAILABLE</strong> ho jayengi</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-emerald-500 font-black">✓</span>
+                      <span>Database <strong>VACUUM (Compact)</strong> ho kar super-fast ho jayega</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="p-3 bg-secondary/50 rounded-xl border border-border text-xs text-muted-foreground flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>
+                    <strong>Mehfooz Data:</strong> Menu Items, Categories, Deals, Users, Printers aur Settings ko kuch nahi hoga.
+                  </span>
+                </div>
+
+                {/* Auth Mode Section */}
+                {isAdmin ? (
+                  <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-2.5">
+                    <ShieldCheck className="w-5 h-5 shrink-0" />
+                    <span>
+                      Aap <strong>Admin</strong> ({currentUser?.name || currentUser?.username}) ke tor par login hain. Kisi PIN ki zaroorat nahi hai.
+                    </span>
+                  </div>
+                ) : (
+                  <div className="space-y-2 pt-2 border-t border-border">
+                    <label className="text-xs font-black text-foreground flex items-center gap-1.5">
+                      <Key className="w-3.5 h-3.5 text-amber-500" />
+                      Admin Authorization PIN:
+                    </label>
+                    <input
+                      type="password"
+                      autoFocus
+                      maxLength={10}
+                      placeholder="Enter Admin 4-digit PIN"
+                      value={clearHistoryPin}
+                      onChange={(e) => {
+                        setClearHistoryPin(e.target.value)
+                        setClearHistoryError("")
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleExecuteClearHistory()
+                      }}
+                      className="w-full h-11 px-4 bg-background border border-border rounded-xl text-base font-bold tracking-widest focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all placeholder:text-muted-foreground/40 placeholder:tracking-normal placeholder:text-sm"
+                    />
+                    <p className="text-[11px] text-muted-foreground">
+                      Aap Cashier / Non-Admin account mein hain. Sirf Admin ke PIN se ye action authorize ho sakta hai.
+                    </p>
+                    {clearHistoryError && (
+                      <p className="text-xs font-bold text-red-500 mt-1">
+                        {clearHistoryError}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-4 border-t border-border bg-secondary/20 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  disabled={isClearingHistory}
+                  onClick={() => setIsClearHistoryModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl border border-border text-foreground hover:bg-secondary font-bold text-xs transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isClearingHistory || (!isAdmin && clearHistoryPin.length < 4)}
+                  onClick={handleExecuteClearHistory}
+                  className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 active:scale-95 text-white font-black text-xs transition-all shadow-md shadow-red-600/20 flex items-center gap-2 disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
+                >
+                  {isClearingHistory ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Clearing Database...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4" />
+                      Yes, Clear Everything
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 

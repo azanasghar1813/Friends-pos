@@ -137,5 +137,25 @@ export const authService = {
       }
     }
     return false;
+  },
+
+  verifyAdminPin: (pin) => {
+    const trimmed = String(pin || '').trim();
+    if (trimmed.length < 4) return false;
+
+    const admins = dbEngine.prepare(`
+      SELECT u.pin_code, r.name as role_name
+      FROM users u
+      JOIN roles r ON u.role_id = r.id
+      WHERE u.is_active = 1
+        AND (r.name IN ('Super Admin', 'Super Administrator', 'Admin', 'Owner') OR u.username = 'admin')
+    `).all();
+
+    for (const admin of admins) {
+      if (admin.pin_code && securityUtils.verifyPin(trimmed, admin.pin_code)) {
+        return true;
+      }
+    }
+    return false;
   }
 };

@@ -8,6 +8,7 @@ import {
 import { kitchenService } from '../services/kitchenService'
 import { formatReceiptOrderNumber } from '../utils/receiptOrderNumber'
 import { audioChime } from '../utils/audioChime'
+import { useSettingsStore } from '../store/settingsStore'
 
 export interface LcdTicketItem {
   id: string
@@ -37,6 +38,7 @@ export interface LcdTicket {
 
 export const LiveLcdDisplay: React.FC = () => {
   const navigate = useNavigate()
+  const businessName = useSettingsStore(s => s.restaurantName) || "Friend's Restaurant"
 
   const handleBack = () => {
     if (window.history.length > 1) {
@@ -48,17 +50,18 @@ export const LiveLcdDisplay: React.FC = () => {
 
   // View mode: 'kitchen' = Chef prep screen, 'customer' = Fast-food pickup screen, 'grid' = All tickets grid
   const [viewMode, setViewMode] = useState<'kitchen' | 'customer' | 'grid'>(() => {
-    return (localStorage.getItem('df_lcd_mode') as any) || 'kitchen'
+    return (localStorage.getItem('pos_lcd_mode') as any) || (localStorage.getItem('df_lcd_mode') as any) || 'kitchen'
   })
 
   // Display zoom scale for different TV screen sizes (0.8x to 1.4x)
   const [zoomScale, setZoomScale] = useState<number>(() => {
-    const saved = localStorage.getItem('df_lcd_zoom')
+    const saved = localStorage.getItem('pos_lcd_zoom') || localStorage.getItem('df_lcd_zoom')
     return saved ? Number(saved) : 1
   })
 
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
-    return localStorage.getItem('df_lcd_sound') !== 'false'
+    const saved = localStorage.getItem('pos_lcd_sound') ?? localStorage.getItem('df_lcd_sound')
+    return saved !== 'false'
   })
 
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -79,15 +82,15 @@ export const LiveLcdDisplay: React.FC = () => {
 
   // Save preferences
   useEffect(() => {
-    localStorage.setItem('df_lcd_mode', viewMode)
+    localStorage.setItem('pos_lcd_mode', viewMode)
   }, [viewMode])
 
   useEffect(() => {
-    localStorage.setItem('df_lcd_zoom', String(zoomScale))
+    localStorage.setItem('pos_lcd_zoom', String(zoomScale))
   }, [zoomScale])
 
   useEffect(() => {
-    localStorage.setItem('df_lcd_sound', String(soundEnabled))
+    localStorage.setItem('pos_lcd_sound', String(soundEnabled))
   }, [soundEnabled])
 
   // Fullscreen change listener
@@ -146,14 +149,14 @@ export const LiveLcdDisplay: React.FC = () => {
 
           const items: LcdTicketItem[] = (row.items || []).map((i: any) => ({
             id: i.id || i.item_id,
-            name: i.product_name_snapshot || i.product_name || 'Shawarma',
+            name: i.product_name_snapshot || i.product_name || 'Item',
             quantity: i.quantity || 1,
             notes: i.item_notes || i.notes || null,
             modifiers: (i.modifiers || []).map((m: any) => ({
               name: m.modifier_name_snapshot || m.name || ''
             })),
             status: i.item_kitchen_state || i.kitchen_state || 'PENDING',
-            category: i.category_name || 'SHAWARMA',
+            category: i.category_name || 'GENERAL',
             comboComponents: i.combo_components || []
           }))
 
@@ -531,7 +534,7 @@ export const LiveLcdDisplay: React.FC = () => {
 
               <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Shawarma Items</p>
+                  <p className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Kitchen Items</p>
                   <p className="text-3xl font-black text-orange-400 mt-0.5">
                     {preparingTickets.reduce((acc, t) => acc + t.items.reduce((sum, i) => sum + i.quantity, 0), 0)}
                   </p>
@@ -645,7 +648,7 @@ export const LiveLcdDisplay: React.FC = () => {
                 ) : (
                   <div className="flex-1 flex flex-col items-center justify-center py-20 text-neutral-600">
                     <CheckCircle2 className="w-20 h-20 mb-4 stroke-1 text-emerald-500/40" />
-                    <h2 className="text-2xl font-black text-neutral-300">All Shawarmas Prepared!</h2>
+                    <h2 className="text-2xl font-black text-neutral-300">All Orders Prepared!</h2>
                     <p className="text-sm text-neutral-500 mt-1">Kitchen queue is currently clear.</p>
                   </div>
                 )}
@@ -810,7 +813,7 @@ export const LiveLcdDisplay: React.FC = () => {
             <div className="bg-neutral-900 border border-neutral-800 rounded-2xl px-6 py-3 flex items-center justify-between text-xs font-bold uppercase tracking-widest text-neutral-400 overflow-hidden shrink-0">
               <div className="flex items-center gap-3">
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-                <span className="text-amber-400">Fresh Charcoal &amp; Grill Shawarma</span>
+                <span className="text-amber-400">{businessName} • Fresh &amp; Quality Food</span>
               </div>
               <div className="truncate mx-4 text-neutral-300">
                 Please have your receipt ready • Thank you for your patience!
@@ -830,7 +833,7 @@ export const LiveLcdDisplay: React.FC = () => {
                 Active Order Tickets ({filteredTickets.length})
               </span>
               <div className="flex gap-2">
-                {['ALL', 'SHAWARMA', 'DEAL', 'DRINK'].map(st => (
+                {['ALL', 'FOOD', 'DEAL', 'DRINK'].map(st => (
                   <button
                     key={st}
                     onClick={() => setFilterStation(st)}

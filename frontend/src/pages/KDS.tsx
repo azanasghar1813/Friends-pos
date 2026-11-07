@@ -5,6 +5,7 @@ import {
   Search, Printer, CheckCircle2, AlertCircle, RefreshCw, Clock, Usb, Bluetooth, Network, Settings2, RefreshCcw, XCircle, Tv
 } from 'lucide-react'
 import { configApi } from '../api/configApi'
+import { toast } from '../store/toastStore'
 
 export const KDS: React.FC = () => {
   const { tickets, updateTicketStatus, fetchTickets, clearFailedTickets } = useKdsStore()
@@ -94,10 +95,10 @@ export const KDS: React.FC = () => {
       }
       // Refresh system printers
       fetchPrinters()
-      alert(`Printer successfully assigned as ${targetType}!`)
+      toast.success(`Printer successfully assigned as ${targetType}!`)
     } catch (e) {
       console.error(e)
-      alert("Failed to assign printer")
+      toast.error("Failed to assign printer")
     }
   }
 
@@ -166,7 +167,10 @@ export const KDS: React.FC = () => {
 
   const handleRetryAllFailed = async () => {
     const failedTickets = mappedTickets.filter(t => t.displayStatus === "PRINT_FAILED")
-    if (failedTickets.length === 0) return alert("No failed prints to retry!")
+    if (failedTickets.length === 0) {
+      toast.info("No failed prints to retry!")
+      return
+    }
     
     setIsRetryingAll(true)
     try {
@@ -185,13 +189,16 @@ export const KDS: React.FC = () => {
 
   const handleClearFailed = async () => {
     const failedTickets = mappedTickets.filter(t => t.displayStatus === "PRINT_FAILED")
-    if (failedTickets.length === 0) return alert("No failed prints to clear.")
+    if (failedTickets.length === 0) {
+      toast.info("No failed prints to clear.")
+      return
+    }
     if (!window.confirm(`Clear ${failedTickets.length} failed kitchen ticket(s) from this screen? They will leave the Failed list.`)) return
     try {
       await clearFailedTickets(failedTickets.map(t => t.id))
     } catch (e) {
       console.error(e)
-      alert("Could not clear failed tickets. Try again.")
+      toast.error("Could not clear failed tickets. Try again.")
     }
   }
 
@@ -201,10 +208,10 @@ export const KDS: React.FC = () => {
       if (result) {
         updateTicketStatus(ticket.id, "Accepted")
       } else {
-        alert("Kitchen printer did not accept the ticket. Check USB or LAN printer.")
+        toast.error("Kitchen printer did not accept the ticket. Check USB or LAN printer.")
       }
     } catch (e) {
-      alert("Kitchen print failed.")
+      toast.error("Kitchen print failed.")
     }
   }
 

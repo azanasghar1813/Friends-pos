@@ -206,7 +206,8 @@ class OrderHistoryService {
   // ──────────────────────────────────────────────────────────────────────────
 
   /**
-   * Wipes out all order history completely.
+   * Wipes out all order history and activity logs completely.
+   * Cleans all transactional tables and executes VACUUM for maximum performance.
    * Irreversible action.
    */
   wipeOutHistory() {
@@ -214,6 +215,8 @@ class OrderHistoryService {
       try { dbEngine.prepare(sql).run(); } catch { /* table may not exist */ }
     };
     dbEngine.transaction(() => {
+      run('DELETE FROM order_attachments');
+      run('DELETE FROM order_tags');
       run('DELETE FROM order_combo_components');
       run('DELETE FROM order_item_modifiers');
       run('DELETE FROM order_item_addons');
@@ -227,14 +230,30 @@ class OrderHistoryService {
       run('DELETE FROM reprint_log');
       run('DELETE FROM print_jobs');
       run('DELETE FROM print_queue');
+      run('DELETE FROM ticket_leases');
       run('DELETE FROM orders');
       run('DELETE FROM order_number_sequences');
-      run("DELETE FROM activity_logs WHERE entity_type = 'ORDER'");
-      run("DELETE FROM sync_queue WHERE entity_type IN ('ORDER', 'ORDER_ITEM', 'ORDER_PAYMENT', 'PAYMENT')");
+      run("UPDATE dining_tables SET status = 'AVAILABLE'");
+      run('DELETE FROM activity_logs');
+      run("DELETE FROM sync_queue WHERE entity_type IN ('ORDER', 'ORDER_ITEM', 'ORDER_PAYMENT', 'PAYMENT', 'ACTIVITY_LOG')");
+      try {
+        dbEngine.prepare("DELETE FROM sqlite_sequence WHERE name IN ('orders', 'order_items', 'ticket_leases', 'print_jobs')").run();
+      } catch { /* sequence table or rows might not exist */ }
     });
+
     historyCacheService.clearAll();
+    try { orderCacheService.clear(); } catch { /* optional */ }
+    try { kitchenQueueService.cache.clear(); } catch { /* optional */ }
     try { kitchenQueueService.invalidate(); } catch { /* optional */ }
-    console.log('[OrderHistoryService] All order history wiped out successfully.');
+
+    // Run VACUUM to reclaim space, defragment, and rebuild indexes for top speed
+    try {
+      dbEngine.exec('VACUUM;');
+    } catch (e) {
+      console.warn('[OrderHistoryService] VACUUM skipped or failed:', e.message);
+    }
+
+    console.log('[OrderHistoryService] All order history and activity logs wiped out successfully. Database optimized.');
   }
 
   /**

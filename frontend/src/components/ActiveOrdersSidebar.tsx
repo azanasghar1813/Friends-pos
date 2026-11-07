@@ -16,6 +16,7 @@ import { apiClient } from "../api/client"
 import KitchenTicketPreview from "../pages/KitchenTicketPreview"
 import ReceiptPreview from "../pages/ReceiptPreview"
 import { formatReceiptOrderNumber } from "../utils/receiptOrderNumber"
+import { toast } from "../store/toastStore"
 
 interface ActiveOrdersSidebarProps {
   isOpen: boolean
@@ -189,7 +190,7 @@ export const ActiveOrdersSidebar: React.FC<ActiveOrdersSidebarProps> = ({ isOpen
       onClose()
     } catch(e: any) {
       console.error(e)
-      alert(e?.message || 'Could not load this order for edit.')
+      toast.error(e?.message || 'Could not load this order for edit.')
     }
   }
 
@@ -236,10 +237,10 @@ export const ActiveOrdersSidebar: React.FC<ActiveOrdersSidebarProps> = ({ isOpen
     try {
       await apiClient.post(`/orders/${order.id}/transition`, { targetState: 'CANCELLED' })
       useOrderStore.getState().updateOrder(order.id, { status: 'Cancelled', kitchenStatus: 'Cancelled' })
-      // WebSockets handle state hydration
+      toast.success('Order cancelled successfully')
     } catch (err: any) {
       console.error(err)
-      alert(err?.response?.data?.message || err?.message || 'Could not cancel this order.')
+      toast.error(err?.response?.data?.message || err?.message || 'Could not cancel this order.')
     }
   }
 
@@ -251,10 +252,10 @@ export const ActiveOrdersSidebar: React.FC<ActiveOrdersSidebarProps> = ({ isOpen
     try {
       await apiClient.post(`/orders/${order.id}/transition`, { targetState: 'COMPLETED', reason: 'Marked complete from active orders' })
       useOrderStore.getState().updateOrder(order.id, { status: 'Completed' })
-      // WebSockets handle state hydration
+      toast.success('Order marked as completed')
     } catch (e: any) {
       console.error(e)
-      alert(e?.response?.data?.message || e?.message || 'Could not complete this order.')
+      toast.error(e?.response?.data?.message || e?.message || 'Could not complete this order.')
     }
   }
 
